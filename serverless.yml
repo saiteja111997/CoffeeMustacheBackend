@@ -1,0 +1,20 @@
+service: coffee_mustache_backend
+
+provider:
+  name: aws
+  runtime: provided.al2
+  region: us-east-1
+  stage: ${opt:stage}
+  environment: ${file(env.json)}
+  httpApi:
+    cors: true
+
+functions:
+  HealthCheck:
+    handler: bootstrap
+    timeout: 300
+    events:
+      - http:
+          path: /ping
+          method: GET
+          cors: true
