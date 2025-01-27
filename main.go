@@ -3,19 +3,55 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
+	"os"
 	"time"
 
-	helpers "coffeeMustacheBackend/pkg/helper"
+	helper "coffeeMustacheBackend/pkg/helper"
 	"coffeeMustacheBackend/pkg/server"
+	"coffeeMustacheBackend/pkg/structures"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 
 	fiberadapter "github.com/awslabs/aws-lambda-go-api-proxy/fiber"
 )
+
+var config structures.Config
+
+func init() {
+
+	if !helper.IsLambda() {
+		err := godotenv.Load(".env")
+		if err != nil {
+			log.Fatalf("Error loading environment variables file")
+		}
+	}
+
+	config = structures.Config{
+		DB_USERNAME:        os.Getenv("DB_USERNAME"),
+		DB_PASSWORD:        os.Getenv("DB_PASSWORD"),
+		DB_HOSTNAME:        os.Getenv("DB_HOSTNAME"),
+		DB_PORT:            os.Getenv("DB_PORT"),
+		DATABASE:           os.Getenv("DATABASE"),
+		ORIGIN:             os.Getenv("ORIGIN"),
+		TWILIO_ACCOUNT_SID: os.Getenv("TWILIO_ACCOUNT_SID"),
+		TWILIO_AUTH_TOKEN:  os.Getenv("TWILIO_AUTH_TOKEN"),
+		TWILIO_SERVICES_ID: os.Getenv("TWILIO_SERVICES_ID"),
+	}
+
+	// Check if required variables are loaded
+	if config.DB_HOSTNAME == "" {
+		log.Fatalf("One or more required environment variables are missing")
+	} else {
+		fmt.Println("Successfully loaded environment variables from Lambda!")
+	}
+}
 
 var fiberLambda *fiberadapter.FiberLambda
 
@@ -23,13 +59,55 @@ func main() {
 	fmt.Println("Starting the server !!")
 	app := fiber.New()
 
-	svr := server.Server{}
+	// Use the CORS middleware
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: config.ORIGIN,
+		AllowMethods: "GET,POST,PUT,DELETE",
+		AllowHeaders: "Origin, Content-Type, Accept",
+	}))
+
+	DB_USERNAME := config.DB_USERNAME
+	DB_PASSWORD := config.DB_PASSWORD
+	DB_HOSTNAME := config.DB_HOSTNAME
+	DB_PORT := config.DB_PORT
+	DATABASE := config.DATABASE
+
+	//ctx := context.Background()
+	if err := waitForHost(DB_HOSTNAME, DB_PORT); err != nil {
+		log.Fatalln(err)
+	}
+
+	fmt.Println("Connection established")
+
+	db, err := helper.Open(helper.Config{
+		Username: DB_USERNAME,
+		Password: DB_PASSWORD,
+		Hostname: DB_HOSTNAME,
+		Port:     DB_PORT,
+		Database: DATABASE,
+	})
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.Upsell{}, &structures.CrossSell{}, &structures.Order{}, &structures.OrderItem{})
+
+	defer db.Close()
+
+	svr := server.Server{
+		Config: config,
+		Db:     db,
+	}
 
 	app.Get("/ping", svr.HealthCheck)
+	app.Post("/sendOtp", svr.SendOtp)
+	app.Post("/verifyOtp", svr.VerifyOtp)
 
 	fmt.Println("Routing established!!")
 
-	if helpers.IsLambda() {
+	if helper.IsLambda() {
 		fiberLambda = fiberadapter.New(app)
 		lambda.Start(Handler)
 	} else {
@@ -52,7 +130,6 @@ func Handler(ctx context.Context, request events.APIGatewayProxyRequest) (events
 	response.Headers["Access-Control-Allow-Origin"] = "*"
 	response.Headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,DELETE"
 	response.Headers["Access-Control-Allow-Headers"] = "Origin, Content-Type, Accept"
-	response.Headers["Access-Control-Allow-Credentials"] = "true"
 
 	return response, err
 }

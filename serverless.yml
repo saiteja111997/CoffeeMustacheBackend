@@ -1,9 +1,9 @@
-service: coffee_mustache_backend
+service: coffeeMustacheBackend
 
 provider:
   name: aws
   runtime: provided.al2
-  region: us-east-1
+  region: ap-south-1
   stage: ${opt:stage}
   environment: ${file(env.json)}
   httpApi:
@@ -12,9 +12,24 @@ provider:
 functions:
   HealthCheck:
     handler: bootstrap
-    timeout: 300
     events:
       - http:
           path: /ping
           method: GET
+          cors: true
+
+  SendOtp:
+    handler: bootstrap
+    events:
+      - http:
+          path: /sendOtp
+          method: POST
+          cors: true
+
+  VerifyOtp:
+    handler: bootstrap
+    events:
+      - http:
+          path: /verifyOtp
+          method: POST
           cors: true
