@@ -19,17 +19,22 @@ type Preference struct {
 }
 
 type MenuItem struct {
-	ID             uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	CafeID         uint      `gorm:"not null" json:"cafe_id"`
-	Category       string    `gorm:"type:varchar(50);not null" json:"category"`  // e.g., "Pizza", "Beverages"
-	SubCategory    string    `gorm:"type:varchar(50)" json:"sub_category"`       // e.g., "Hot Coffee", "Non-Veg Pizza"
-	Name           string    `gorm:"type:varchar(100);not null" json:"name"`     // e.g., "Cappuccino"
-	Description    string    `gorm:"type:text" json:"description"`               // Item description
-	Price          float64   `gorm:"type:decimal(10,2);not null" json:"price"`   // Base price of the item
-	IsCustomizable bool      `gorm:"default:false" json:"is_customizable"`       // Whether customization is allowed
-	FoodType       string    `gorm:"type:varchar(10);not null" json:"food_type"` // e.g., "veg", "non-veg", "vegan"
-	ImageURL       string    `gorm:"type:varchar(255)" json:"image_url"`         // URL for item image
-	CreatedAt      time.Time `gorm:"autoCreateTime" json:"created_at"`           // Timestamp for item creation
+	ID              uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	CafeID          uint      `gorm:"not null" json:"cafe_id"`
+	Category        string    `gorm:"type:varchar(50);not null" json:"category"`  // e.g., "Pizza", "Beverages"
+	SubCategory     string    `gorm:"type:varchar(50)" json:"sub_category"`       // e.g., "Hot Coffee", "Non-Veg Pizza"
+	Name            string    `gorm:"type:varchar(100);not null" json:"name"`     // e.g., "Cappuccino"
+	Description     string    `gorm:"type:text" json:"description"`               // Item description
+	Price           float64   `gorm:"type:decimal(10,2);not null" json:"price"`   // Base price of the item
+	IsCustomizable  bool      `gorm:"default:false" json:"is_customizable"`       // Whether customization is allowed
+	FoodType        string    `gorm:"type:varchar(10);not null" json:"food_type"` // e.g., "veg", "non-veg", "vegan"
+	ImageURL        string    `gorm:"type:varchar(255)" json:"image_url"`         // Image URL
+	AvailableFrom   string    `gorm:"type:varchar(255)" json:"available_from"`    // Start time of the item
+	AvailableTill   string    `gorm:"type:varchar(255)" json:"available_till"`    // End time of the item
+	AvailableAllDay bool      `gorm:"default:true" json:"available_all_day"`      // Is the item available the whole day
+	IsAvailable     bool      `gorm:"default:true" json:"is_available"`           // Is the item currently available
+	Tag             string    `gorm:"type:varchar(255)" json:"tag"`               // A special tag eg : best seller
+	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`           // Timestamp for item creation
 }
 
 type ItemCustomization struct {
@@ -38,16 +43,8 @@ type ItemCustomization struct {
 	CustomizationType string    `gorm:"type:varchar(50);not null" json:"customization_type"`
 	OptionName        string    `gorm:"type:varchar(50);not null" json:"option_name"`
 	AdditionalCost    float64   `gorm:"type:decimal(10,2);default:0" json:"additional_cost"`
+	Priority          int       `gorm:"default:1" json:"priority"`
 	CreatedAt         time.Time `gorm:"autoCreateTime" json:"created_at"`
-}
-
-type Upsell struct {
-	ID           uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	BaseItemID   uint      `gorm:"not null" json:"base_item_id"`
-	UpsellItemID uint      `gorm:"not null" json:"upsell_item_id"`
-	UpsellType   string    `gorm:"type:varchar(50);not null" json:"upsell_type"`
-	Priority     int       `gorm:"default:1" json:"priority"`
-	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
 
 type CrossSell struct {
