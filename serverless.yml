@@ -33,3 +33,11 @@ functions:
           path: /verifyOtp
           method: POST
           cors: true
+
+  UpsellItem:
+    handler: bootstrap
+    events:
+      - http:
+          path: /upsellItem
+          method: POST
+          cors: true

@@ -43,6 +43,7 @@ func init() {
 		TWILIO_ACCOUNT_SID: os.Getenv("TWILIO_ACCOUNT_SID"),
 		TWILIO_AUTH_TOKEN:  os.Getenv("TWILIO_AUTH_TOKEN"),
 		TWILIO_SERVICES_ID: os.Getenv("TWILIO_SERVICES_ID"),
+		OPEN_AI_API_KEY:    os.Getenv("OPEN_AI_API_KEY"),
 	}
 
 	// Check if required variables are loaded
@@ -92,7 +93,7 @@ func main() {
 		return
 	}
 
-	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.Upsell{}, &structures.CrossSell{}, &structures.Order{}, &structures.OrderItem{})
+	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.Order{}, &structures.OrderItem{})
 
 	defer db.Close()
 
@@ -104,6 +105,8 @@ func main() {
 	app.Get("/ping", svr.HealthCheck)
 	app.Post("/sendOtp", svr.SendOtp)
 	app.Post("/verifyOtp", svr.VerifyOtp)
+	app.Post("/upsellItem", svr.UpsellItem)
+	app.Post("/crossSellItem", svr.CrossSellItem)
 
 	fmt.Println("Routing established!!")
 
