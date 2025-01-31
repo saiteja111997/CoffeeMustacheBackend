@@ -1,4 +1,4 @@
-package helper
+package cartApi
 
 import (
 	"fmt"
@@ -129,8 +129,8 @@ func (s *Svr) DeleteFromCart(c *fiber.Ctx) error {
 	})
 }
 
-// FetchCartHandler handles fetching items in the cart for a user
-func (s *Svr) FetchCartHandler(c *fiber.Ctx) error {
+// FetchCart handles fetching items in the cart for a user
+func (s *Svr) FetchCart(c *fiber.Ctx) error {
 	userID := c.FormValue("user_id")
 
 	// Validate and convert input
