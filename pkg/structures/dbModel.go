@@ -34,7 +34,8 @@ type MenuItem struct {
 	AvailableAllDay bool      `gorm:"default:true" json:"available_all_day"`      // Is the item available the whole day
 	IsAvailable     bool      `gorm:"default:true" json:"is_available"`           // Is the item currently available
 	Tag             string    `gorm:"type:varchar(255)" json:"tag"`               // A special tag eg : best seller
-	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`           // Timestamp for item creation
+	Rating          float64   `gorm:"default:0.0;not null" json:"rating"`
+	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"` // Timestamp for item creation
 }
 
 type ItemCustomization struct {
@@ -48,12 +49,13 @@ type ItemCustomization struct {
 }
 
 type CrossSell struct {
-	ID              uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	BaseItemID      uint      `gorm:"not null" json:"base_item_id"`
-	CrossSellItemID uint      `gorm:"not null" json:"cross_sell_item_id"`
-	Priority        int       `gorm:"default:1" json:"priority"`
-	Description     string    `gorm:"type:text" json:"description"`
-	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`
+	ID                uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	BaseItemID        uint      `gorm:"not null" json:"base_item_id"`
+	CrossSellItemID   uint      `gorm:"not null" json:"cross_sell_item_id"`
+	CrossSellCategory string    `gorm:"type:varchar(100)" json:"cross_sell_category"`
+	Priority          int       `gorm:"default:1" json:"priority"`
+	Description       string    `gorm:"type:text" json:"description"`
+	CreatedAt         time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
 
 type Order struct {

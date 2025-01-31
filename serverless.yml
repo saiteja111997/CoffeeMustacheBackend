@@ -41,3 +41,21 @@ functions:
           path: /upsellItem
           method: POST
           cors: true
+
+  CrossSellItem:
+   handler: bootstrap
+   events:
+     - http:
+         path: /crossSellItem
+         method: POST
+         cors: true
+
+  GetUpsellAndCrossSell:
+   handler: bootstrap
+   events:
+     - http:
+         path: /getUpsellAndCrossSell
+         method: POST
+         cors: true
+
+  

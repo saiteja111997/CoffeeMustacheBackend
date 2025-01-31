@@ -107,6 +107,7 @@ func main() {
 	app.Post("/verifyOtp", svr.VerifyOtp)
 	app.Post("/upsellItem", svr.UpsellItem)
 	app.Post("/crossSellItem", svr.CrossSellItem)
+	app.Post("/getUpsellAndCrossSell", svr.GetUpsellAndCrossSell)
 
 	fmt.Println("Routing established!!")
 
