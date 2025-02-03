@@ -108,6 +108,7 @@ func main() {
 	app.Post("/upsellItem", svr.UpsellItem)
 	app.Post("/crossSellItem", svr.CrossSellItem)
 	app.Post("/getUpsellAndCrossSell", svr.GetUpsellAndCrossSell)
+	app.Post("/aiMenuAI", svr.AskMenuAI)
 
 	fmt.Println("Routing established!!")
 
