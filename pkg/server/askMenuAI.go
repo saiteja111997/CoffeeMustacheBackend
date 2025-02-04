@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -19,100 +20,140 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Query is required"})
 	}
 
-	// Fetch menu items
-	var menu []structures.MenuItem
-	err := s.Db.Find(&menu).Error
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	// Dynamically include user query in the AI prompt
+	prompt := fmt.Sprintf(`You are an AI trained to generate SQL queries based on user prompts. Your goal is to accurately interpret user queries and generate SQL queries based on intent, not just exact keyword matches.
+
+	### **User Query:**
+	"%s"
+
+	### **Instructions:**
+	- Understand the intent behind the user's query.
+	- If it falls into one of the supported scenarios, generate an SQL query.
+	- Provide a human-readable explanation of the generated SQL query.
+
+	### **Response Format:**
+	Always return a JSON response in the following format:
+	json
+	{
+	"sql": "GENERATED_SQL_QUERY_HERE",
+	"response": "Brief explanation of the query in simple terms."
 	}
+	If the query does not match any supported scenario, return:
+	{
+	"sql": "",
+	"response": "I'm only trained to help you explore menu items based on price, category, tags, or cuisine."
+	}
+	Supported Scenarios:
+	Price-based queries
+	Example: "Show me items only below 300"
+	SQL: SELECT * FROM menu_items WHERE price < 300
+	Category-based queries
+	Example: "Show me all the desserts available in this cafe"
+	SQL: SELECT * FROM menu_items WHERE category='Desserts'
+	Tag-based queries
+	Example: "Show me only best selling items in this cafe"
+	SQL: SELECT * FROM menu_items WHERE tag='bestseller'
+	Cuisine-based queries
+	Example: "Show me Italian cuisine available in this cafe"
+	SQL: SELECT * FROM menu_items WHERE cuisine='italian'
+	Available Categories:
+	Biryani, Salads, Grill, Chicken Dishes, Egg Dishes, Main Course, Paneer Dishes, Pizza, Pasta, Lamb & Seafood, Pulao, Mocktails, Cold Coffee, Breakfast, Starters, Conversation Starters, Breads, Tea, Juices, Soups, Curries, Rice, Tacos, Quick Bites, Desserts, Rice & Noodles.
 
-	// Construct OpenAI prompt
-	prompt := fmt.Sprintf(`You are a food recommendation AI trained to answer only about the menu. Given the menu items below, answer the user’s question accordingly.
+	Available Cuisines:
+	Italian, Mexican, Indian, Chinese, Japanese, Mediterranean, Thai, French, American, Korean, Vietnamese, Middle-Eastern, Greek, Spanish.
 
-    **Rules:**
-    - If the question is unrelated to food, return: 
-      {"response": "I'm only trained to help you explore the menu. Please ask me something related to food or drinks.", "items": []}
-    
-    - If the user asks about available items, return:
-      {"response": "Here is what we have:", "items": [{"id": 1, "name": "Item Name", "price": 450, "rating": 4.5}]}
-
-    - If the user asks for best sellers, return:
-      {"response": "Here are our best sellers:", "items": [{"id": 5, "name": "Best Seller", "price": 400, "rating": 4.8}]}
-
-    - If the user asks about budget, return items under the given budget:
-      {"response": "Here are items under ₹X:", "items": [{"id": 6, "name": "Budget Meal", "price": 350, "rating": 4.2}]}
-
-    - If the user asks for pairing or cross-sell, return:
-      {"response": "Here are some great pairings:", "items": [{"id": 7, "name": "Cappuccino", "price": 200, "rating": 4.6}]}
-
-    - If the user asks for combos, return:
-      {"response": "Here are some great meal combos:", "combos": [{"name": "Meal for Two", "items": [{"id": 3, "name": "Pizza", "price": 350, "rating": 4.6}, {"id": 4, "name": "Iced Latte", "price": 150, "rating": 4.3}], "total_price": 500}]}
-
-    **User Query:** %s
-
-    **Menu Items:**
-    %s
-    `, userQuery, formatMenuInput(menu))
+	Menu Items Schema:
+	CREATE TABLE menu_items ( id SERIAL PRIMARY KEY, cafe_id INT NOT NULL, category VARCHAR(50) NOT NULL, sub_category VARCHAR(50), name VARCHAR(100) NOT NULL, description TEXT, price DECIMAL(10,2) NOT NULL, is_customizable BOOLEAN DEFAULT FALSE, food_type VARCHAR(10) NOT NULL, cuisine VARCHAR(50) NOT NULL, dietary_labels VARCHAR(50), spice_level VARCHAR(20), ingredients TEXT, allergens VARCHAR(255), serving_size VARCHAR(50), calories INT, preparation_time INT, discount DECIMAL(5,2), popularity_score FLOAT DEFAULT 0.0, image_url VARCHAR(255), available_from VARCHAR(255), available_till VARCHAR(255), available_all_day BOOLEAN DEFAULT TRUE, is_available BOOLEAN DEFAULT TRUE, tag VARCHAR(255), rating FLOAT DEFAULT 0.0 NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP );
+	`, userQuery)
 
 	// Call OpenAI API
-	requestBody, _ := json.Marshal(map[string]interface{}{
+	requestBody, err := json.Marshal(map[string]interface{}{
 		"model":      "gpt-4o",
 		"messages":   []map[string]string{{"role": "user", "content": prompt}},
-		"max_tokens": 5000,
+		"max_tokens": 500,
 	})
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to prepare AI request"})
+	}
 
 	apiKey := s.Config.OPEN_AI_API_KEY
 
-	req, _ := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(requestBody))
+	req, err := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(requestBody))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create AI request"})
+	}
+
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
+
+	currentTime := time.Now()
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to reach AI service"})
 	}
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to read AI response"})
+	}
 
+	fmt.Println("Time taken to get response from AI : ", time.Since(currentTime))
 	// Parse OpenAI response
 	var result map[string]interface{}
 	if err := json.Unmarshal(body, &result); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Invalid response from AI"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Invalid AI response format"})
 	}
 
 	// Extract AI response
 	choices, ok := result["choices"].([]interface{})
 	if !ok || len(choices) == 0 {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "AI response error"})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "AI response missing choices"})
 	}
 
-	content := choices[0].(map[string]interface{})["message"].(map[string]interface{})["content"].(string)
-	fmt.Println("Content: ", content)
+	message, ok := choices[0].(map[string]interface{})["message"].(map[string]interface{})
+	if !ok {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "AI response missing message"})
+	}
+
+	content, ok := message["content"].(string)
+	if !ok {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "AI response missing content"})
+	}
 
 	// Clean JSON output
-	cleanedContent := strings.TrimPrefix(content, "```json")
-	cleanedContent = strings.TrimSuffix(cleanedContent, "```")
-	cleanedContent = strings.TrimSpace(cleanedContent)
+	cleanedContent := strings.Trim(content, "`json ")
 
-	// Convert AI response JSON into struct
-	var aiSuggestions map[string]interface{}
-	if err := json.Unmarshal([]byte(cleanedContent), &aiSuggestions); err != nil {
-		fmt.Println("Error parsing AI response:", err.Error())
+	// Parse AI response JSON
+	var aiResponse map[string]string
+	if err := json.Unmarshal([]byte(cleanedContent), &aiResponse); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to parse AI response"})
 	}
 
-	// Return AI's structured response
-	return c.JSON(aiSuggestions)
-}
-
-// Utility: Formats menu for OpenAI input
-func formatMenuInput(menu []structures.MenuItem) string {
-	menuStr := ""
-	for _, item := range menu {
-		menuStr += fmt.Sprintf("- %s (ID: %d, Price: ₹%.2f, Rating: %.1f, Tag: %s)\n",
-			item.Name, item.ID, item.Price, item.Rating, item.Tag)
+	// If AI response does not contain SQL, return the response message
+	if sqlQuery, exists := aiResponse["sql"]; exists && sqlQuery == "" {
+		return c.JSON(fiber.Map{"text": aiResponse["response"], "items": []structures.MenuItem{}})
 	}
-	return menuStr
+
+	fmt.Println("Print SQL query : ", aiResponse["sql"])
+
+	// Execute the generated SQL query
+	var menu []structures.MenuItem
+	err = s.Db.Raw(aiResponse["sql"]).Scan(&menu).Error
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Database query execution failed"})
+	}
+
+	// Format response text
+	responseText := aiResponse["response"]
+	if len(menu) == 0 {
+		responseText = "This cafe does not have any matching items."
+	}
+
+	return c.JSON(fiber.Map{
+		"text":  responseText,
+		"items": menu,
+	})
 }

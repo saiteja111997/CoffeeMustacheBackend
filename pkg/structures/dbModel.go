@@ -2,6 +2,55 @@ package structures
 
 import "time"
 
+// Cuisine Enum
+type Cuisine string
+
+const (
+	Italian       Cuisine = "italian"
+	Mexican       Cuisine = "mexican"
+	Indian        Cuisine = "indian"
+	Chinese       Cuisine = "chinese"
+	Japanese      Cuisine = "japanese"
+	Mediterranean Cuisine = "mediterranean"
+	Thai          Cuisine = "thai"
+	French        Cuisine = "french"
+	American      Cuisine = "american"
+	Korean        Cuisine = "korean"
+	Vietnamese    Cuisine = "vietnamese"
+	MiddleEastern Cuisine = "middle-eastern"
+	Greek         Cuisine = "greek"
+	Spanish       Cuisine = "spanish"
+)
+
+// Dietary Labels Enum
+type DietaryLabel string
+
+const (
+	GlutenFree       DietaryLabel = "gluten-free"
+	HighProtein      DietaryLabel = "high-protein"
+	Vegan            DietaryLabel = "vegan"
+	Keto             DietaryLabel = "keto"
+	LactoseFree      DietaryLabel = "lactose-free"
+	LowCarb          DietaryLabel = "low-carb"
+	LowFat           DietaryLabel = "low-fat"
+	Organic          DietaryLabel = "organic"
+	SugarFree        DietaryLabel = "sugar-free"
+	Paleo            DietaryLabel = "paleo"
+	Vegetarian       DietaryLabel = "vegetarian"
+	Whole30          DietaryLabel = "whole30"
+	DiabeticFriendly DietaryLabel = "diabetic-friendly"
+)
+
+// Spice Level Enum
+type SpiceLevel string
+
+const (
+	Mild       SpiceLevel = "mild"
+	Medium     SpiceLevel = "medium"
+	Spicy      SpiceLevel = "spicy"
+	ExtraSpicy SpiceLevel = "extra-spicy"
+)
+
 type User struct {
 	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
 	Phone     string    `gorm:"type:varchar(15);not null" json:"phone"`
@@ -19,23 +68,33 @@ type Preference struct {
 }
 
 type MenuItem struct {
-	ID              uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	CafeID          uint      `gorm:"not null" json:"cafe_id"`
-	Category        string    `gorm:"type:varchar(50);not null" json:"category"`  // e.g., "Pizza", "Beverages"
-	SubCategory     string    `gorm:"type:varchar(50)" json:"sub_category"`       // e.g., "Hot Coffee", "Non-Veg Pizza"
-	Name            string    `gorm:"type:varchar(100);not null" json:"name"`     // e.g., "Cappuccino"
-	Description     string    `gorm:"type:text" json:"description"`               // Item description
-	Price           float64   `gorm:"type:decimal(10,2);not null" json:"price"`   // Base price of the item
-	IsCustomizable  bool      `gorm:"default:false" json:"is_customizable"`       // Whether customization is allowed
-	FoodType        string    `gorm:"type:varchar(10);not null" json:"food_type"` // e.g., "veg", "non-veg", "vegan"
-	ImageURL        string    `gorm:"type:varchar(255)" json:"image_url"`         // Image URL
-	AvailableFrom   string    `gorm:"type:varchar(255)" json:"available_from"`    // Start time of the item
-	AvailableTill   string    `gorm:"type:varchar(255)" json:"available_till"`    // End time of the item
-	AvailableAllDay bool      `gorm:"default:true" json:"available_all_day"`      // Is the item available the whole day
-	IsAvailable     bool      `gorm:"default:true" json:"is_available"`           // Is the item currently available
-	Tag             string    `gorm:"type:varchar(255)" json:"tag"`               // A special tag eg : best seller
-	Rating          float64   `gorm:"default:0.0;not null" json:"rating"`
-	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"` // Timestamp for item creation
+	ID              uint         `gorm:"primaryKey;autoIncrement" json:"id"`
+	CafeID          uint         `gorm:"not null" json:"cafe_id"`
+	Category        string       `gorm:"type:varchar(50);not null" json:"category"`
+	SubCategory     string       `gorm:"type:varchar(50)" json:"sub_category"`
+	Name            string       `gorm:"type:varchar(100);not null" json:"name"`
+	Description     string       `gorm:"type:text" json:"description"`
+	Price           float64      `gorm:"type:decimal(10,2);not null" json:"price"`
+	IsCustomizable  bool         `gorm:"default:false" json:"is_customizable"`
+	FoodType        string       `gorm:"type:varchar(10);not null" json:"food_type"`
+	Cuisine         Cuisine      `gorm:"type:varchar(50);not null" json:"cuisine"` // Cuisine as enum
+	DietaryLabels   DietaryLabel `gorm:"type:varchar(50)" json:"dietary_labels"`   // Dietary label as enum
+	SpiceLevel      SpiceLevel   `gorm:"type:varchar(20)" json:"spice_level"`      // Spice level as enum
+	Ingredients     string       `gorm:"type:text" json:"ingredients"`
+	Allergens       string       `gorm:"type:varchar(255)" json:"allergens"`
+	ServingSize     string       `gorm:"type:varchar(50)" json:"serving_size"`
+	Calories        int          `gorm:"type:int" json:"calories"`
+	PreparationTime int          `gorm:"type:int" json:"preparation_time"`
+	Discount        float64      `gorm:"type:decimal(5,2)" json:"discount"`
+	PopularityScore float64      `gorm:"default:0.0" json:"popularity_score"`
+	ImageURL        string       `gorm:"type:varchar(255)" json:"image_url"`
+	AvailableFrom   string       `gorm:"type:varchar(255)" json:"available_from"`
+	AvailableTill   string       `gorm:"type:varchar(255)" json:"available_till"`
+	AvailableAllDay bool         `gorm:"default:true" json:"available_all_day"`
+	IsAvailable     bool         `gorm:"default:true" json:"is_available"`
+	Tag             string       `gorm:"type:varchar(255)" json:"tag"`
+	Rating          float64      `gorm:"default:0.0;not null" json:"rating"`
+	CreatedAt       time.Time    `gorm:"autoCreateTime" json:"created_at"`
 }
 
 type ItemCustomization struct {

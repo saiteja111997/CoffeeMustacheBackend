@@ -94,6 +94,7 @@ func main() {
 	}
 
 	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.Order{}, &structures.OrderItem{})
+	fmt.Println("Auto migration done!!")
 
 	defer db.Close()
 
