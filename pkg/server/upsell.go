@@ -7,14 +7,18 @@ import (
 )
 
 func (s *Server) UpsellItem(c *fiber.Ctx) error {
-	itemId := c.FormValue("item_id")
 
-	// Validate input
-	if itemId == "" {
+	// Parse JSON input
+	var input struct {
+		ItemID string `json:"item_id"`
+	}
+
+	if err := c.BodyParser(&input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "itemId is required",
+			"error": "Invalid input",
 		})
 	}
+	itemId := input.ItemID
 
 	// Parse item ID
 	var menuItem structures.MenuItem

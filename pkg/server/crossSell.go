@@ -17,7 +17,18 @@ import (
 // API Handler for Cross-Selling
 func (s *Server) CrossSellItem(c *fiber.Ctx) error {
 
-	itemId := c.FormValue("item_id")
+	type CrossSellRequest struct {
+		ItemID string `json:"item_id"`
+	}
+
+	var req CrossSellRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid input",
+		})
+	}
+
+	itemId := req.ItemID
 
 	// Validate input
 	if itemId == "" {
@@ -27,6 +38,11 @@ func (s *Server) CrossSellItem(c *fiber.Ctx) error {
 	}
 
 	itemIdInt, err := strconv.Atoi(itemId)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid itemId",
+		})
+	}
 
 	// Get the selected item details
 	var selectedItem structures.MenuItem

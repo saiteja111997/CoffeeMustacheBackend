@@ -13,9 +13,19 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+type AIRequest struct {
+	Query string `json:"query"`
+}
+
 // API Handler
 func (s *Server) AskMenuAI(c *fiber.Ctx) error {
-	userQuery := c.FormValue("query")
+
+	var aiRequest AIRequest
+	if err := c.BodyParser(&aiRequest); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid input"})
+	}
+
+	userQuery := aiRequest.Query
 	if userQuery == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Query is required"})
 	}
@@ -36,7 +46,7 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 	json
 	{
 	"sql": "GENERATED_SQL_QUERY_HERE",
-	"response": "Brief explanation of the query in simple terms."
+	"response": "A reponse to user prompt eg: Here are the items below 300"
 	}
 	If the query does not match any supported scenario, return:
 	{
@@ -56,6 +66,9 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 	Cuisine-based queries
 	Example: "Show me Italian cuisine available in this cafe"
 	SQL: SELECT * FROM menu_items WHERE cuisine='italian'
+	Price and category based
+	Example: "Show me pizzas under 400 available in this cafe"
+	SQL: SELECT * FROM menu_items WHERE category='Pizza' AND price < 400
 	Available Categories:
 	Biryani, Salads, Grill, Chicken Dishes, Egg Dishes, Main Course, Paneer Dishes, Pizza, Pasta, Lamb & Seafood, Pulao, Mocktails, Cold Coffee, Breakfast, Starters, Conversation Starters, Breads, Tea, Juices, Soups, Curries, Rice, Tacos, Quick Bites, Desserts, Rice & Noodles.
 

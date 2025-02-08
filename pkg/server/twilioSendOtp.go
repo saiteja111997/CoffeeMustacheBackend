@@ -11,9 +11,21 @@ import (
 
 func (s *Server) SendOtp(c *fiber.Ctx) error {
 
-	phoneNumber := c.FormValue("phone_number")
-	name := c.FormValue("name")
-	gender := c.FormValue("gender")
+	var request struct {
+		PhoneNumber string `json:"phone_number"`
+		Name        string `json:"name"`
+		Gender      string `json:"gender"`
+	}
+
+	if err := c.BodyParser(&request); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid input",
+		})
+	}
+
+	phoneNumber := request.PhoneNumber
+	name := request.Name
+	gender := request.Gender
 
 	// Validate input
 	if phoneNumber == "" || name == "" || gender == "" {

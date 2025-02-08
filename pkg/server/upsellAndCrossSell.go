@@ -8,14 +8,26 @@ import (
 
 // API Handler
 func (s *Server) GetUpsellAndCrossSell(c *fiber.Ctx) error {
-	itemId := c.FormValue("item_id")
 
-	// Validate input
-	if itemId == "" {
+	var input struct {
+		ItemID string `json:"item_id"`
+	}
+
+	// Parse JSON input
+	if err := c.BodyParser(&input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "itemId is required",
+			"error": "Invalid input",
 		})
 	}
+
+	// Validate input
+	if input.ItemID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "item_id is required",
+		})
+	}
+
+	itemId := input.ItemID
 
 	// Fetch Upsells (Customizations)
 	var upsells []structures.ItemCustomization

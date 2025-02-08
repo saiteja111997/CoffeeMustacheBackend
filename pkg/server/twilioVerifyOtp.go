@@ -10,8 +10,20 @@ import (
 
 func (s *Server) VerifyOtp(c *fiber.Ctx) error {
 
-	phoneNumber := c.FormValue("phone_number")
-	code := c.FormValue("code")
+	var request struct {
+		PhoneNumber string `json:"phone_number"`
+		Code        string `json:"code"`
+	}
+
+	if err := c.BodyParser(&request); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "invalid request body",
+		})
+	}
+
+	phoneNumber := request.PhoneNumber
+	code := request.Code
 
 	params := &twilioApi.CreateVerificationCheckParams{}
 	params.SetTo(phoneNumber)

@@ -57,5 +57,21 @@ functions:
          path: /getUpsellAndCrossSell
          method: POST
          cors: true
+  
+  AskMenuAI:
+   handler: bootstrap
+   events:
+     - http:
+         path: /askMenuAI
+         method: POST
+         cors: true
+
+  GetMenu:
+   handler: bootstrap
+   events:
+     - http:
+         path: /getMenu
+         method: POST
+         cors: true
 
   
