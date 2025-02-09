@@ -77,9 +77,9 @@ type MenuItem struct {
 	Price           float64      `gorm:"type:decimal(10,2);not null" json:"price"`
 	IsCustomizable  bool         `gorm:"default:false" json:"is_customizable"`
 	FoodType        string       `gorm:"type:varchar(10);not null" json:"food_type"`
-	Cuisine         Cuisine      `gorm:"type:varchar(50);not null" json:"cuisine"` // Cuisine as enum
-	DietaryLabels   DietaryLabel `gorm:"type:varchar(50)" json:"dietary_labels"`   // Dietary label as enum
-	SpiceLevel      SpiceLevel   `gorm:"type:varchar(20)" json:"spice_level"`      // Spice level as enum
+	Cuisine         Cuisine      `gorm:"type:varchar(50)" json:"cuisine"`        // Cuisine as enum
+	DietaryLabels   DietaryLabel `gorm:"type:varchar(50)" json:"dietary_labels"` // Dietary label as enum
+	SpiceLevel      SpiceLevel   `gorm:"type:varchar(20)" json:"spice_level"`    // Spice level as enum
 	Ingredients     string       `gorm:"type:text" json:"ingredients"`
 	Allergens       string       `gorm:"type:varchar(255)" json:"allergens"`
 	ServingSize     string       `gorm:"type:varchar(50)" json:"serving_size"`
