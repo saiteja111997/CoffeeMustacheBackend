@@ -94,7 +94,7 @@ func main() {
 	}
 
 	db = db.Debug()
-	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.Order{}, &structures.OrderItem{})
+	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.Order{}, &structures.OrderItem{}, &structures.CuratedCart{}, &structures.CuratedCartItem{})
 	fmt.Println("Auto migration done!!")
 
 	defer db.Close()
@@ -102,6 +102,17 @@ func main() {
 	svr := server.Server{
 		Config: config,
 		Db:     db,
+	}
+
+	functionName := os.Getenv("FUNCTION_NAME")
+
+	// Handle specific functions differently
+	switch functionName {
+	case "curatedCartCronJob":
+		svr.RunCuratedCartsJob()
+		return
+	default:
+		fmt.Println("Proceeding with normal server setup")
 	}
 
 	app.Get("/ping", svr.HealthCheck)
@@ -112,6 +123,7 @@ func main() {
 	app.Post("/getUpsellAndCrossSell", svr.GetUpsellAndCrossSell)
 	app.Post("/askMenuAI", svr.AskMenuAI)
 	app.Post("/getMenu", svr.GetMenu)
+	app.Post("/getFilteredList", svr.GetFilteredList)
 
 	fmt.Println("Routing established!!")
 

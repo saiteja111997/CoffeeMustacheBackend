@@ -74,4 +74,21 @@ functions:
          method: POST
          cors: true
 
+  GetFilteredList:
+   handler: bootstrap
+   events:
+     - http:
+         path: /getFilteredList
+         method: POST
+         cors: true
+
+  CreateCuratedCartsJob:
+    handler: bootstrap
+    environment:
+      FUNCTION_NAME: "curatedCartCronJob"
+    events:
+      - schedule:
+          rate: cron(30 1 * * ? *)  # Runs every day at 1:30 AM UTC
+          enabled: true
+
   

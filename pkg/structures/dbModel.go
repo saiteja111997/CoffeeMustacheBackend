@@ -1,6 +1,10 @@
 package structures
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/datatypes"
+)
 
 // Cuisine Enum
 type Cuisine string
@@ -51,6 +55,26 @@ const (
 	ExtraSpicy SpiceLevel = "extra-spicy"
 )
 
+type TimeOfDay string
+
+const (
+	Morning   TimeOfDay = "morning"
+	Afternoon TimeOfDay = "noon"
+	Night     TimeOfDay = "night"
+)
+
+// Define the enum type
+type CMCategory string
+
+const (
+	Beverages       CMCategory = "Beverages"
+	BreakfastBrunch CMCategory = "Breakfast & Brunch"
+	Appetizers      CMCategory = "Appetizers & Small Bites"
+	MainCourse      CMCategory = "Main Course"
+	BreadsSides     CMCategory = "Breads & Sides"
+	Desserts        CMCategory = "Desserts & Sweets"
+)
+
 type User struct {
 	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
 	Phone     string    `gorm:"type:varchar(15);not null" json:"phone"`
@@ -80,6 +104,7 @@ type MenuItem struct {
 	Cuisine         Cuisine      `gorm:"type:varchar(50)" json:"cuisine"`        // Cuisine as enum
 	DietaryLabels   DietaryLabel `gorm:"type:varchar(50)" json:"dietary_labels"` // Dietary label as enum
 	SpiceLevel      SpiceLevel   `gorm:"type:varchar(20)" json:"spice_level"`    // Spice level as enum
+	CMCategory      CMCategory   `gorm:"type:varchar(50)" json:"cm_category"`    // CM Category as enum
 	Ingredients     string       `gorm:"type:text" json:"ingredients"`
 	Allergens       string       `gorm:"type:varchar(255)" json:"allergens"`
 	ServingSize     string       `gorm:"type:varchar(50)" json:"serving_size"`
@@ -133,4 +158,21 @@ type OrderItem struct {
 	Price          float64   `gorm:"type:decimal(10,2);not null" json:"price"`
 	Customizations string    `gorm:"type:jsonb" json:"customizations"` // Store customizations as JSON
 	CreatedAt      time.Time `gorm:"autoCreateTime" json:"created_at"`
+}
+
+type CuratedCart struct {
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	CafeID    uint           `gorm:"index;not null" json:"cafe_id"`
+	Name      string         `gorm:"type:varchar(255);not null" json:"name"`
+	TimeOfDay TimeOfDay      `gorm:"type:varchar(50);not null" json:"time_of_day"`
+	Date      time.Time      `gorm:"type:date;index" json:"date"`
+	Source    string         `gorm:"type:varchar(50);default:'ai'" json:"source"`
+	ItemIDs   datatypes.JSON `gorm:"type:jsonb"`
+	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
+}
+type CuratedCartItem struct {
+	ID       uint `gorm:"primaryKey" json:"id"`
+	CartID   uint `gorm:"index;not null" json:"cart_id"`
+	ItemID   uint `gorm:"index;not null" json:"item_id"`
+	Priority int  `gorm:"default:0" json:"priority"` // Helps in ordering items within a cart
 }
