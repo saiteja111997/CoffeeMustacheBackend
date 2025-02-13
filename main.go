@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	helper "coffeeMustacheBackend/pkg/helper"
@@ -16,6 +17,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/golang-jwt/jwt"
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 
@@ -23,6 +25,9 @@ import (
 )
 
 var config structures.Config
+
+// Secret key for JWT signing (Use env variable or config)
+var jwtSecret = os.Getenv("JWT_SECRET")
 
 func init() {
 
@@ -55,6 +60,64 @@ func init() {
 }
 
 var fiberLambda *fiberadapter.FiberLambda
+
+// Middleware to extract and validate JWT
+func ExtractJWT(c *fiber.Ctx) error {
+	// Get Authorization header
+	authHeader := c.Get("Authorization")
+	if authHeader == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Missing Authorization header",
+		})
+	}
+
+	// Check if it's a Bearer token
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid Authorization header format",
+		})
+	}
+
+	// Extract token by removing "Bearer " prefix
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+	// Parse and validate the token
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Ensure the signing method is HMAC
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method")
+		}
+		return jwtSecret, nil
+	})
+
+	// Check for parsing or validation errors
+	if err != nil || !token.Valid {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid or expired token",
+		})
+	}
+
+	// Extract claims (payload) from the token
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to extract token claims",
+		})
+	}
+
+	// Example: Extract user phone number from claims
+	phoneNumber := claims["phone_number"].(string)
+
+	// Store phone number in context for further use
+	c.Locals("phone_number", phoneNumber)
+
+	// Proceed to next handler
+	return c.Next()
+}
 
 func main() {
 	fmt.Println("Starting the server !!")
@@ -116,14 +179,13 @@ func main() {
 	}
 
 	app.Get("/ping", svr.HealthCheck)
-	app.Post("/sendOtp", svr.SendOtp)
-	app.Post("/verifyOtp", svr.VerifyOtp)
-	app.Post("/upsellItem", svr.UpsellItem)
-	app.Post("/crossSellItem", svr.CrossSellItem)
-	app.Post("/getUpsellAndCrossSell", svr.GetUpsellAndCrossSell)
-	app.Post("/askMenuAI", svr.AskMenuAI)
-	app.Post("/getMenu", svr.GetMenu)
-	app.Post("/getFilteredList", svr.GetFilteredList)
+	// Apply JWT middleware to protected routes
+	app.Post("/upsellItem", ExtractJWT, svr.UpsellItem)
+	app.Post("/crossSellItem", ExtractJWT, svr.CrossSellItem)
+	app.Post("/getUpsellAndCrossSell", ExtractJWT, svr.GetUpsellAndCrossSell)
+	app.Post("/askMenuAI", ExtractJWT, svr.AskMenuAI)
+	app.Post("/getMenu", ExtractJWT, svr.GetMenu)
+	app.Post("/getFilteredList", ExtractJWT, svr.GetFilteredList)
 
 	fmt.Println("Routing established!!")
 

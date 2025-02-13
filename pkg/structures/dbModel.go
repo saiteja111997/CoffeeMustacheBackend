@@ -156,7 +156,7 @@ type OrderItem struct {
 	MenuItemID     uint      `gorm:"not null" json:"menu_item_id"`
 	Quantity       int       `gorm:"not null" json:"quantity"`
 	Price          float64   `gorm:"type:decimal(10,2);not null" json:"price"`
-	Customizations string    `gorm:"type:jsonb" json:"customizations"` // Store customizations as JSON
+	Customizations string    `gorm:"type:jsonb" json:"customizations"`
 	CreatedAt      time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
 
