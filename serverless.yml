@@ -18,22 +18,6 @@ functions:
           method: GET
           cors: true
 
-  SendOtp:
-    handler: bootstrap
-    events:
-      - http:
-          path: /sendOtp
-          method: POST
-          cors: true
-
-  VerifyOtp:
-    handler: bootstrap
-    events:
-      - http:
-          path: /verifyOtp
-          method: POST
-          cors: true
-
   UpsellItem:
     handler: bootstrap
     events:
@@ -90,5 +74,41 @@ functions:
       - schedule:
           rate: cron(30 1 * * ? *)  # Runs every day at 1:30 AM UTC
           enabled: true
+
+  GetCrossSellData:
+    handler: bootstrap
+    events:
+      - http:
+          path: /getCrossSellData
+          method: POST
+          cors: true
+
+  GetCuratedCart:
+    handler: bootstrap
+    events:
+      - http:
+          path: /getCuratedCart
+          method: POST
+          cors: true
+
+  RecordUserSession:
+    handler: bootstrap
+    events:
+      - http:
+          path: /recordUserSession
+          method: POST
+          cors: true
+
+  AddToCartRequest:
+    handler: bootstrap
+    events:
+      - http:
+          path: /addToCart
+          method: POST
+          cors: true
+
+  
+
+  
 
   

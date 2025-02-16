@@ -26,9 +26,6 @@ import (
 
 var config structures.Config
 
-// Secret key for JWT signing (Use env variable or config)
-var jwtSecret = os.Getenv("JWT_SECRET")
-
 func init() {
 
 	if !helper.IsLambda() {
@@ -49,6 +46,7 @@ func init() {
 		TWILIO_AUTH_TOKEN:  os.Getenv("TWILIO_AUTH_TOKEN"),
 		TWILIO_SERVICES_ID: os.Getenv("TWILIO_SERVICES_ID"),
 		OPEN_AI_API_KEY:    os.Getenv("OPEN_AI_API_KEY"),
+		JWT_SECRET:         os.Getenv("JWT_SECRET"),
 	}
 
 	// Check if required variables are loaded
@@ -89,7 +87,7 @@ func ExtractJWT(c *fiber.Ctx) error {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method")
 		}
-		return jwtSecret, nil
+		return []byte(config.JWT_SECRET), nil
 	})
 
 	// Check for parsing or validation errors
@@ -110,10 +108,11 @@ func ExtractJWT(c *fiber.Ctx) error {
 	}
 
 	// Example: Extract user phone number from claims
-	phoneNumber := claims["phone_number"].(string)
+	userId := claims["user_id"].(float64)
+	fmt.Println("User ID extracted from token: ", userId)
 
 	// Store phone number in context for further use
-	c.Locals("phone_number", phoneNumber)
+	c.Locals("userId", userId)
 
 	// Proceed to next handler
 	return c.Next()
@@ -157,7 +156,7 @@ func main() {
 	}
 
 	db = db.Debug()
-	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.Order{}, &structures.OrderItem{}, &structures.CuratedCart{}, &structures.CuratedCartItem{})
+	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.CuratedCart{}, &structures.CuratedCartItem{}, &structures.Session{}, &structures.UserSession{}, &structures.Cart{}, &structures.CartItem{}, &structures.Order{}, &structures.OrderItem{}, &structures.Order{}, &structures.OrderItem{})
 	fmt.Println("Auto migration done!!")
 
 	defer db.Close()
@@ -186,6 +185,10 @@ func main() {
 	app.Post("/askMenuAI", ExtractJWT, svr.AskMenuAI)
 	app.Post("/getMenu", ExtractJWT, svr.GetMenu)
 	app.Post("/getFilteredList", ExtractJWT, svr.GetFilteredList)
+	app.Post("/getCrossSellData", ExtractJWT, svr.GetCrossSellData)
+	app.Post("/recordUserSession", ExtractJWT, svr.RecordUserSession)
+	app.Post("/getCuratedCart", ExtractJWT, svr.GetCuratedCart)
+	app.Post("/addToCart", ExtractJWT, svr.AddToCart)
 
 	fmt.Println("Routing established!!")
 

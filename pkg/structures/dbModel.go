@@ -6,6 +6,69 @@ import (
 	"gorm.io/datatypes"
 )
 
+// SessionStatus Enum
+type SessionStatus string
+
+const (
+	Active   SessionStatus = "Active"
+	Inactive SessionStatus = "Inactive"
+)
+
+// Role Enum (User Session)
+type UserRole string
+
+const (
+	Host  UserRole = "Host"
+	Guest UserRole = "Guest"
+)
+
+// CartStatus Enum
+type CartStatus string
+
+const (
+	CartActive  CartStatus = "Active"
+	CartOrdered CartStatus = "Ordered"
+)
+
+// OrderStatus Enum
+type OrderStatus string
+
+const (
+	OrderPlaced    OrderStatus = "Placed"
+	OrderConfirmed OrderStatus = "Confirmed"
+	OrderPreparing OrderStatus = "Preparing"
+	OrderReady     OrderStatus = "Ready"
+	OrderCompleted OrderStatus = "Completed"
+	OrderCancelled OrderStatus = "Cancelled"
+)
+
+// PaymentMethod Enum
+type PaymentMethod string
+
+const (
+	Cash   PaymentMethod = "Cash"
+	Card   PaymentMethod = "Card"
+	UPI    PaymentMethod = "UPI"
+	Wallet PaymentMethod = "Wallet"
+)
+
+// PaymentStatus Enum
+type PaymentStatus string
+
+const (
+	Pending   PaymentStatus = "Pending"
+	Completed PaymentStatus = "Completed"
+	Failed    PaymentStatus = "Failed"
+)
+
+// AvailabilityStatus Enum (Menu Item)
+type AvailabilityStatus string
+
+const (
+	Available   AvailabilityStatus = "Available"
+	Unavailable AvailabilityStatus = "Unavailable"
+)
+
 // Cuisine Enum
 type Cuisine string
 
@@ -81,6 +144,7 @@ type User struct {
 	Name      string    `gorm:"type:varchar(100);not null" json:"name"`
 	Gender    string    `gorm:"type:varchar(100);not null" json:"gender"`
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 type Preference struct {
@@ -89,6 +153,7 @@ type Preference struct {
 	PreferenceType  string    `gorm:"type:varchar(50);not null" json:"preference_type"`
 	PreferenceValue string    `gorm:"type:varchar(100);not null" json:"preference_value"`
 	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt       time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 type MenuItem struct {
@@ -120,6 +185,7 @@ type MenuItem struct {
 	Tag             string       `gorm:"type:varchar(255)" json:"tag"`
 	Rating          float64      `gorm:"default:0.0;not null" json:"rating"`
 	CreatedAt       time.Time    `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt       time.Time    `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 type ItemCustomization struct {
@@ -130,6 +196,7 @@ type ItemCustomization struct {
 	AdditionalCost    float64   `gorm:"type:decimal(10,2);default:0" json:"additional_cost"`
 	Priority          int       `gorm:"default:1" json:"priority"`
 	CreatedAt         time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt         time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 type CrossSell struct {
@@ -140,24 +207,7 @@ type CrossSell struct {
 	Priority          int       `gorm:"default:1" json:"priority"`
 	Description       string    `gorm:"type:text" json:"description"`
 	CreatedAt         time.Time `gorm:"autoCreateTime" json:"created_at"`
-}
-
-type Order struct {
-	ID          uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	UserID      uint      `gorm:"not null" json:"user_id"`
-	TotalAmount float64   `gorm:"type:decimal(10,2);not null" json:"total_amount"`
-	Status      string    `gorm:"type:varchar(50);default:'Pending'" json:"status"`
-	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
-}
-
-type OrderItem struct {
-	ID             uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	OrderID        uint      `gorm:"not null" json:"order_id"`
-	MenuItemID     uint      `gorm:"not null" json:"menu_item_id"`
-	Quantity       int       `gorm:"not null" json:"quantity"`
-	Price          float64   `gorm:"type:decimal(10,2);not null" json:"price"`
-	Customizations string    `gorm:"type:jsonb" json:"customizations"`
-	CreatedAt      time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt         time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 type CuratedCart struct {
@@ -168,11 +218,86 @@ type CuratedCart struct {
 	Date      time.Time      `gorm:"type:date;index" json:"date"`
 	Source    string         `gorm:"type:varchar(50);default:'ai'" json:"source"`
 	ItemIDs   datatypes.JSON `gorm:"type:jsonb"`
+	ImageURL  string         `gorm:"type:varchar(255)" json:"image_url"`
 	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
 }
+
 type CuratedCartItem struct {
 	ID       uint `gorm:"primaryKey" json:"id"`
 	CartID   uint `gorm:"index;not null" json:"cart_id"`
 	ItemID   uint `gorm:"index;not null" json:"item_id"`
 	Priority int  `gorm:"default:0" json:"priority"` // Helps in ordering items within a cart
+}
+
+// Sessions Table
+type Session struct {
+	SessionID     string        `gorm:"primaryKey;type:varchar(100)" json:"session_id"`
+	TableID       string        `gorm:"type:varchar(100);not null" json:"table_id"`
+	CafeID        uint          `gorm:"not null" json:"cafe_id"`
+	SessionStatus SessionStatus `gorm:"type:varchar(50);not null" json:"session_status"`
+	StartTime     time.Time     `json:"start_time"`
+	EndTime       *time.Time    `json:"end_time,omitempty"`
+	CreatedBy     uint          `gorm:"not null" json:"created_by"`
+	CreatedAt     time.Time     `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt     time.Time     `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+// User Sessions Table
+type UserSession struct {
+	UserSessionID string    `gorm:"type:varchar(100);primaryKey" json:"user_session_id"`
+	SessionID     string    `gorm:"type:varchar(100);not null" json:"session_id"`
+	UserID        uint      `gorm:"not null" json:"user_id"`
+	JoinedAt      time.Time `gorm:"autoCreateTime" json:"joined_at"`
+	Role          UserRole  `gorm:"type:varchar(50);not null" json:"role"`
+}
+
+// Cart Table
+type Cart struct {
+	CartID      string     `gorm:"type:varchar(100);primaryKey" json:"cart_id"`
+	SessionID   string     `gorm:"type:varchar(100);not null" json:"session_id"`
+	UserID      uint       `gorm:"not null" json:"user_id"`
+	CartStatus  CartStatus `gorm:"type:varchar(50);not null" json:"cart_status"`
+	TotalAmount float64    `gorm:"type:decimal(10,2)" json:"total_amount"`
+	Note        string     `gorm:"type:text" json:"note"`
+	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt   time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+type CartItem struct {
+	CartItemID       uint           `gorm:"primaryKey;autoIncrement" json:"cart_item_id"`
+	CartID           string         `gorm:"type:varchar(100);not null" json:"cart_id"`
+	ItemID           uint           `gorm:"not null" json:"item_id"`
+	Quantity         int            `gorm:"not null" json:"quantity"`
+	Price            float64        `gorm:"type:decimal(10,2)" json:"price"`
+	AddedAt          time.Time      `gorm:"autoCreateTime" json:"added_at"`
+	SpecialRequest   string         `gorm:"type:text" json:"special_request"`
+	CustomizationIDs datatypes.JSON `gorm:"type:jsonb" json:"customization_ids"`   // Customization IDs as JSON array
+	CrossSellItemIDs datatypes.JSON `gorm:"type:jsonb" json:"cross_sell_item_ids"` // Cross Sell Item IDs as JSON array
+	CreatedAt        time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt        time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+// Orders Table
+type Order struct {
+	OrderID       string        `gorm:"type:varchar(100);primaryKey" json:"order_id"`
+	CartID        string        `gorm:"type:varchar(100);not null" json:"cart_id"`
+	SessionID     string        `gorm:"type:varchar(100);not null" json:"session_id"`
+	UserID        uint          `gorm:"not null" json:"user_id"`
+	OrderStatus   OrderStatus   `gorm:"type:varchar(50);not null" json:"order_status"`
+	TotalAmount   float64       `gorm:"type:decimal(10,2)" json:"total_amount"`
+	PaymentMethod PaymentMethod `gorm:"type:varchar(50);not null" json:"payment_method"`
+	PaymentStatus PaymentStatus `gorm:"type:varchar(50);not null" json:"payment_status"`
+	OrderTime     time.Time     `gorm:"autoCreateTime" json:"order_time"`
+	CompletedTime *time.Time    `json:"completed_time,omitempty"`
+}
+
+// Order Items Table
+type OrderItem struct {
+	OrderItemID      uint           `gorm:"primaryKey;autoIncrement" json:"order_item_id"`
+	OrderID          string         `gorm:"type:varchar(100);not null" json:"order_id"`
+	ItemID           uint           `gorm:"not null" json:"item_id"`
+	Quantity         int            `gorm:"not null" json:"quantity"`
+	Price            float64        `gorm:"type:decimal(10,2)" json:"price"`
+	SpecialRequest   string         `gorm:"type:text" json:"special_request"`
+	CustomizationIDs datatypes.JSON `gorm:"type:jsonb" json:"customization_ids"` // Customization IDs as JSON array
 }

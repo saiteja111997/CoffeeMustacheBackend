@@ -11,4 +11,5 @@ type Config struct {
 	TWILIO_AUTH_TOKEN  string `json:"TWILIO_AUTH_TOKEN"`
 	TWILIO_SERVICES_ID string `json:"TWILIO_SERVICES_ID"`
 	OPEN_AI_API_KEY    string `json:"OPEN_AI_API_KEY"`
+	JWT_SECRET         string `json:"JWT_SECRET"`
 }
