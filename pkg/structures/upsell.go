@@ -8,8 +8,9 @@ type CustomizationCategory struct {
 
 // CustomizationItem represents an upsell option for a specific category
 type CustomizationItem struct {
-	ItemName       string  `json:"item_name"`
-	AdditionalCost float64 `json:"additional_cost"`
+	ItemName        string  `json:"item_name"`
+	AdditionalCost  float64 `json:"additional_cost"`
+	CustomizationID uint    `json:"customization_id"`
 }
 
 // CustomizationResponse represents the API response format

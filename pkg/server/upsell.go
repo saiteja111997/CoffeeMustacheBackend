@@ -40,8 +40,9 @@ func (s *Server) UpsellItem(c *fiber.Ctx) error {
 	customizationMap := make(map[string][]structures.CustomizationItem)
 	for _, customization := range customizations {
 		item := structures.CustomizationItem{
-			ItemName:       customization.OptionName,
-			AdditionalCost: customization.AdditionalCost,
+			ItemName:        customization.OptionName,
+			AdditionalCost:  customization.AdditionalCost,
+			CustomizationID: customization.ID,
 		}
 		customizationMap[customization.CustomizationType] = append(customizationMap[customization.CustomizationType], item)
 	}

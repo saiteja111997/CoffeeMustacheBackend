@@ -41,8 +41,9 @@ func (s *Server) GetUpsellAndCrossSell(c *fiber.Ctx) error {
 	upsellMap := make(map[string][]structures.UpsellCategory)
 	for _, upsell := range upsells {
 		upsellMap[upsell.CustomizationType] = append(upsellMap[upsell.CustomizationType], structures.UpsellCategory{
-			Name:           upsell.OptionName,
-			AdditionalCost: upsell.AdditionalCost,
+			Name:            upsell.OptionName,
+			AdditionalCost:  upsell.AdditionalCost,
+			CustomizationID: upsell.ID,
 		})
 	}
 
@@ -68,6 +69,7 @@ func (s *Server) GetUpsellAndCrossSell(c *fiber.Ctx) error {
 		crossSellMap[crossSell.CrossSellCategory] = append(crossSellMap[crossSell.CrossSellCategory], structures.CrossSellCategory{
 			Name:     item.Name,
 			Priority: crossSell.Priority,
+			ItemID:   item.ID,
 		})
 	}
 
