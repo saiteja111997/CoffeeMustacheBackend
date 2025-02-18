@@ -107,6 +107,38 @@ functions:
           method: POST
           cors: true
 
+  GetCart:
+    handler: bootstrap
+    events:
+      - http:
+          path: /getCart
+          method: POST
+          cors: true
+
+  UpdateCustomizations:
+    handler: bootstrap
+    events:
+      - http:
+          path: /updateCustomizations
+          method: POST
+          cors: true
+
+  UpdateCrossSellItems:
+    handler: bootstrap
+    events:
+      - http:
+          path: /updateCrossSellItems
+          method: POST
+          cors: true
+
+  UpdateQuantity:
+    handler: bootstrap
+    events:
+      - http:
+          path: /updateQuantity
+          method: POST
+          cors: true
+
   
 
   

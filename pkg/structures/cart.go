@@ -1,0 +1,57 @@
+package structures
+
+import "gorm.io/datatypes"
+
+// Define request structure for multiple cart items
+type AddToCartRequest struct {
+	CartID      string            `json:"cart_id"`
+	SessionID   string            `json:"session_id" validate:"required"`
+	UserID      uint              `json:"user_id" validate:"required"`
+	TotalAmount float64           `json:"total_amount" validate:"required"`
+	Items       []CartItemRequest `json:"items" validate:"required"`
+}
+
+type CartItemRequest struct {
+	ItemID           uint           `json:"item_id" validate:"required"`
+	Quantity         int            `json:"quantity" validate:"required,min=1"`
+	Price            float64        `json:"price" validate:"required"`
+	AddedVia         string         `json:"added_via" validate:"required"`
+	SpecialRequest   string         `json:"special_request"`
+	CustomizationIDs datatypes.JSON `json:"customization_ids"`   // Expecting JSON array like ["1", "2", "3"]
+	CrossSellItemIDs datatypes.JSON `json:"cross_sell_item_ids"` // Expecting JSON array like ["1", "2", "3"]
+}
+
+type GetCartRequest struct {
+	CartID    string `json:"cart_id" validate:"required"`
+	SessionID string `json:"session_id" validate:"required"`
+}
+
+type CartItemResponse struct {
+	ItemID               uint                `json:"item_id"`
+	Quantity             int                 `json:"quantity"`
+	Price                float64             `json:"price"`
+	AddedVia             string              `json:"added_via"`
+	SpecialRequest       string              `json:"special_request"`
+	CustomizationDetails []map[string]string `json:"customization_ids"`
+	CrossSellItemIDs     []string            `json:"cross_sell_item_ids"`
+}
+
+type UpdateCustomizationsRequest struct {
+	CartID           string   `json:"cart_id" validate:"required"`
+	ItemID           uint     `json:"item_id" validate:"required"`
+	Price            float64  `json:"price" validate:"required"`
+	CustomizationIDs []string `json:"customization_ids"` // Full replacement
+}
+
+type UpdateCrossSellItemsRequest struct {
+	CartID           string   `json:"cart_id" validate:"required"`
+	ItemID           uint     `json:"item_id" validate:"required"`
+	Price            float64  `json:"price" validate:"required"`
+	CrossSellItemIDs []string `json:"cross_sell_item_ids"` // Full replacement
+}
+
+type UpdateQuantityRequest struct {
+	CartID     string `json:"cart_id" validate:"required"`
+	ItemID     uint   `json:"item_id" validate:"required"`
+	UpdateType string `json:"update_type" validate:"required"`
+}

@@ -14,6 +14,26 @@ const (
 	Inactive SessionStatus = "Inactive"
 )
 
+type CartInsertType string
+
+const (
+	Direct            CartInsertType = "Direct"
+	CrossSellPopUp    CartInsertType = "CrossSellPopUp"
+	FromCuratedCart   CartInsertType = "FromCuratedCart"
+	CrossSellFocus    CartInsertType = "CrossSellFocus"
+	TopPicks          CartInsertType = "TopPicks"
+	UpgradeCartAi     CartInsertType = "UpgradeCartAi"
+	CrossSellCheckout CartInsertType = "CrossSellCheckout"
+)
+
+type CartItemStatus string
+
+const (
+	CartItemActive   CartItemStatus = "Active"
+	CartItemOrdered  CartItemStatus = "Ordered"
+	CartItemCanceled CartItemStatus = "Canceled"
+)
+
 // Role Enum (User Session)
 type UserRole string
 
@@ -270,7 +290,9 @@ type CartItem struct {
 	Quantity         int            `gorm:"not null" json:"quantity"`
 	Price            float64        `gorm:"type:decimal(10,2)" json:"price"`
 	AddedAt          time.Time      `gorm:"autoCreateTime" json:"added_at"`
+	AddedVia         CartInsertType `gorm:"type:varchar(50)" json:"added_via"`
 	SpecialRequest   string         `gorm:"type:text" json:"special_request"`
+	Status           CartItemStatus `gorm:"type:varchar(50)" json:"status"`
 	CustomizationIDs datatypes.JSON `gorm:"type:jsonb" json:"customization_ids"`   // Customization IDs as JSON array
 	CrossSellItemIDs datatypes.JSON `gorm:"type:jsonb" json:"cross_sell_item_ids"` // Cross Sell Item IDs as JSON array
 	CreatedAt        time.Time      `gorm:"autoCreateTime" json:"created_at"`
