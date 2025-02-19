@@ -38,6 +38,7 @@ func (s *Server) GetUpsellAndCrossSell(c *fiber.Ctx) error {
 		})
 	}
 
+	// Organize upsells into a map
 	upsellMap := make(map[string][]structures.UpsellCategory)
 	for _, upsell := range upsells {
 		upsellMap[upsell.CustomizationType] = append(upsellMap[upsell.CustomizationType], structures.UpsellCategory{
@@ -47,30 +48,30 @@ func (s *Server) GetUpsellAndCrossSell(c *fiber.Ctx) error {
 		})
 	}
 
-	// Fetch Cross-Sell Items
-	var crossSells []structures.CrossSell
-	err = s.Db.Where("base_item_id = ?", itemId).Find(&crossSells).Error
+	// Fetch Cross-Sell Items with Menu Details (Using JOIN for efficiency)
+	var crossSells []structures.CrossSellCategory
+	err = s.Db.Raw(`
+		SELECT 
+			cs.cross_sell_category,
+			mi.id AS item_id,
+			mi.name AS name,
+			mi.price AS price,
+			cs.priority
+		FROM cross_sells cs
+		JOIN menu_items mi ON cs.cross_sell_item_id = mi.id
+		WHERE cs.base_item_id = ?
+		ORDER BY cs.priority DESC
+	`, itemId).Scan(&crossSells).Error
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch cross-sells",
+			"error": "Failed to fetch cross-sell items",
 		})
 	}
 
+	// Organize cross-sell items into a map
 	crossSellMap := make(map[string][]structures.CrossSellCategory)
 	for _, crossSell := range crossSells {
-		var item structures.MenuItem
-		err = s.Db.Where("id = ?", crossSell.CrossSellItemID).First(&item).Error
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to fetch cross-sell item details",
-			})
-		}
-
-		crossSellMap[crossSell.CrossSellCategory] = append(crossSellMap[crossSell.CrossSellCategory], structures.CrossSellCategory{
-			Name:     item.Name,
-			Priority: crossSell.Priority,
-			ItemID:   item.ID,
-		})
+		crossSellMap[crossSell.CrossSellCategory] = append(crossSellMap[crossSell.CrossSellCategory], crossSell)
 	}
 
 	// Build Response

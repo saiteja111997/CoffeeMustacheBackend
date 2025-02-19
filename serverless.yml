@@ -26,14 +26,6 @@ functions:
           method: POST
           cors: true
 
-  CrossSellItem:
-   handler: bootstrap
-   events:
-     - http:
-         path: /crossSellItem
-         method: POST
-         cors: true
-
   GetUpsellAndCrossSell:
    handler: bootstrap
    events:
@@ -136,6 +128,14 @@ functions:
     events:
       - http:
           path: /updateQuantity
+          method: POST
+          cors: true
+
+  GetCheckoutCrossSells:
+    handler: bootstrap
+    events:
+      - http:
+          path: /crossSellCheckout
           method: POST
           cors: true
 

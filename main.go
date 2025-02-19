@@ -180,7 +180,6 @@ func main() {
 	app.Get("/ping", svr.HealthCheck)
 	// Apply JWT middleware to protected routes
 	app.Post("/upsellItem", ExtractJWT, svr.UpsellItem)
-	app.Post("/crossSellItem", ExtractJWT, svr.CrossSellItem)
 	app.Post("/getUpsellAndCrossSell", ExtractJWT, svr.GetUpsellAndCrossSell)
 	app.Post("/askMenuAI", ExtractJWT, svr.AskMenuAI)
 	app.Post("/getMenu", ExtractJWT, svr.GetMenu)
@@ -193,6 +192,7 @@ func main() {
 	app.Post("/updateCustomizations", ExtractJWT, svr.UpdateCustomizations)
 	app.Post("/updateCrossSellItems", ExtractJWT, svr.UpdateCrossSellItems)
 	app.Post("/updateQuantity", ExtractJWT, svr.UpdateQuantity)
+	app.Post("/crossSellCheckout", ExtractJWT, svr.GetCheckoutCrossSells)
 
 	fmt.Println("Routing established!!")
 
