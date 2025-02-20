@@ -139,6 +139,14 @@ functions:
           method: POST
           cors: true
 
+  UpgradeCart:
+    handler: bootstrap
+    events:
+      - http:
+          path: /upgradeCart
+          method: POST
+          cors: true
+
   
 
   

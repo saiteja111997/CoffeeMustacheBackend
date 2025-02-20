@@ -323,3 +323,17 @@ type OrderItem struct {
 	SpecialRequest   string         `gorm:"type:text" json:"special_request"`
 	CustomizationIDs datatypes.JSON `gorm:"type:jsonb" json:"customization_ids"` // Customization IDs as JSON array
 }
+
+type UpdateCartResult struct {
+	ID                    uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	CartID                string    `gorm:"type:varchar(100);not null" json:"cart_id"`
+	SuggestedItemID       uint      `gorm:"not null" json:"suggested_item_id"`
+	SuggestedItemName     string    `gorm:"type:varchar(255)" json:"suggested_item_name"`
+	SuggestedItemCategory string    `gorm:"type:varchar(100)" json:"suggested_item_category"`
+	SuggestedItemPrice    float64   `gorm:"type:decimal(10,2)" json:"suggested_item_price"`
+	AIResponse            string    `gorm:"type:jsonb;not null" json:"ai_response"`
+	UserReason            string    `gorm:"type:text" json:"user_reason"`
+	ReferenceReason       string    `gorm:"type:text" json:"reference_reason"`
+	UserAction            string    `gorm:"type:varchar(50);default:'pending'" json:"user_action"` // "added", "ignored", "pending"
+	CreatedAt             time.Time `gorm:"autoCreateTime" json:"created_at"`
+}
