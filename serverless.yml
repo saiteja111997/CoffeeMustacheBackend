@@ -147,6 +147,14 @@ functions:
           method: POST
           cors: true
 
+  GetItemAudio:
+    handler: bootstrap
+    events:
+      - http:
+          path: /getItemAudio
+          method: POST
+          cors: true
+
   
 
   

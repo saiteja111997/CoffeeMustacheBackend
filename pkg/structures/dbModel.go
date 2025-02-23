@@ -203,6 +203,7 @@ type MenuItem struct {
 	AvailableAllDay bool         `gorm:"default:true" json:"available_all_day"`
 	IsAvailable     bool         `gorm:"default:true" json:"is_available"`
 	Tag             string       `gorm:"type:varchar(255)" json:"tag"`
+	AudioURL        string       `gorm:"type:varchar(255)" json:"audio_url"`
 	Rating          float64      `gorm:"default:0.0;not null" json:"rating"`
 	CreatedAt       time.Time    `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt       time.Time    `gorm:"autoUpdateTime" json:"updated_at"`

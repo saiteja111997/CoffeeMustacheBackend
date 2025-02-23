@@ -194,6 +194,7 @@ func main() {
 	app.Post("/updateQuantity", ExtractJWT, svr.UpdateQuantity)
 	app.Post("/crossSellCheckout", ExtractJWT, svr.GetCheckoutCrossSells)
 	app.Post("/upgradeCart", ExtractJWT, svr.UpgradeCart)
+	app.Post("getItemAudio", ExtractJWT, svr.GetItemAudio)
 
 	fmt.Println("Routing established!!")
 
