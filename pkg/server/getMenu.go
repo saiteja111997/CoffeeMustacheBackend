@@ -55,6 +55,8 @@ func (s *Server) GetMenu(c *fiber.Ctx) error {
 		})
 	}
 
+	fmt.Println("No of Menu items : ", len(menuItems))
+
 	// Group menu items by category and sub-category
 	groupedMenu := make(map[string]map[string][]structures.MenuItem)
 	for _, item := range menuItems {
@@ -62,7 +64,7 @@ func (s *Server) GetMenu(c *fiber.Ctx) error {
 			groupedMenu[item.Category] = make(map[string][]structures.MenuItem)
 		}
 		if item.SubCategory == "" {
-			groupedMenu[item.Category]["None"] = append(groupedMenu[item.Category][item.SubCategory], item)
+			groupedMenu[item.Category]["None"] = append(groupedMenu[item.Category]["None"], item)
 		} else {
 			groupedMenu[item.Category][item.SubCategory] = append(groupedMenu[item.Category][item.SubCategory], item)
 		}
