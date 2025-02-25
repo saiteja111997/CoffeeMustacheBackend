@@ -6,12 +6,12 @@ import "gorm.io/datatypes"
 type AddToCartRequest struct {
 	CartID      string            `json:"cart_id"`
 	SessionID   string            `json:"session_id" validate:"required"`
-	UserID      uint              `json:"user_id" validate:"required"`
 	TotalAmount float64           `json:"total_amount" validate:"required"`
 	Items       []CartItemRequest `json:"items" validate:"required"`
 }
 
 type CartItemRequest struct {
+	CartItemId       string         `json:"cart_item_id"`
 	ItemID           uint           `json:"item_id" validate:"required"`
 	Quantity         int            `json:"quantity" validate:"required,min=1"`
 	Price            float64        `json:"price" validate:"required"`
@@ -27,6 +27,7 @@ type GetCartRequest struct {
 }
 
 type CartItemResponse struct {
+	CartItemId           string              `json:"cart_item_id"`
 	ItemID               uint                `json:"item_id"`
 	Quantity             int                 `json:"quantity"`
 	Price                float64             `json:"price"`
@@ -37,21 +38,21 @@ type CartItemResponse struct {
 }
 
 type UpdateCustomizationsRequest struct {
-	CartID           string   `json:"cart_id" validate:"required"`
-	ItemID           uint     `json:"item_id" validate:"required"`
+	CartItemId       string   `json:"cart_item_id" validate:"required"`
 	Price            float64  `json:"price" validate:"required"`
 	CustomizationIDs []string `json:"customization_ids"` // Full replacement
+	CartAmount       float64  `json:"cart_amount" validate:"required"`
 }
 
 type UpdateCrossSellItemsRequest struct {
-	CartID           string   `json:"cart_id" validate:"required"`
-	ItemID           uint     `json:"item_id" validate:"required"`
+	CartItemId       string   `json:"cart_item_id" validate:"required"`
 	Price            float64  `json:"price" validate:"required"`
 	CrossSellItemIDs []string `json:"cross_sell_item_ids"` // Full replacement
+	CartAmount       float64  `json:"cart_amount" validate:"required"`
 }
 
 type UpdateQuantityRequest struct {
-	CartID     string `json:"cart_id" validate:"required"`
-	ItemID     uint   `json:"item_id" validate:"required"`
-	UpdateType string `json:"update_type" validate:"required"`
+	CartItemId string  `json:"cart_item_id" validate:"required"`
+	UpdateType string  `json:"update_type" validate:"required"`
+	CartAmount float64 `json:"cart_amount" validate:"required"`
 }

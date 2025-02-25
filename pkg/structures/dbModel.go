@@ -18,7 +18,6 @@ type CartInsertType string
 
 const (
 	Direct            CartInsertType = "Direct"
-	CrossSellPopUp    CartInsertType = "CrossSellPopUp"
 	FromCuratedCart   CartInsertType = "FromCuratedCart"
 	CrossSellFocus    CartInsertType = "CrossSellFocus"
 	TopPicks          CartInsertType = "TopPicks"
@@ -266,11 +265,12 @@ type Session struct {
 
 // User Sessions Table
 type UserSession struct {
-	UserSessionID string    `gorm:"type:varchar(100);primaryKey" json:"user_session_id"`
-	SessionID     string    `gorm:"type:varchar(100);not null" json:"session_id"`
-	UserID        uint      `gorm:"not null" json:"user_id"`
-	JoinedAt      time.Time `gorm:"autoCreateTime" json:"joined_at"`
-	Role          UserRole  `gorm:"type:varchar(50);not null" json:"role"`
+	UserSessionID string     `gorm:"type:varchar(100);primaryKey" json:"user_session_id"`
+	SessionID     string     `gorm:"type:varchar(100);not null" json:"session_id"`
+	UserID        uint       `gorm:"not null" json:"user_id"`
+	JoinedAt      time.Time  `gorm:"autoCreateTime" json:"joined_at"`
+	LeftAt        *time.Time `json:"left_at,omitempty"`
+	Role          UserRole   `gorm:"type:varchar(50);not null" json:"role"`
 }
 
 // Cart Table
@@ -286,7 +286,7 @@ type Cart struct {
 }
 
 type CartItem struct {
-	CartItemID       uint           `gorm:"primaryKey;autoIncrement" json:"cart_item_id"`
+	CartItemID       string         `gorm:"type:varchar(100);primaryKey" json:"cart_item_id"`
 	CartID           string         `gorm:"type:varchar(100);not null" json:"cart_id"`
 	ItemID           uint           `gorm:"not null" json:"item_id"`
 	Quantity         int            `gorm:"not null" json:"quantity"`

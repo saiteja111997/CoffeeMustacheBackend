@@ -30,6 +30,29 @@ func (s *Server) AddToCart(c *fiber.Ctx) error {
 		})
 	}
 
+	// If the session is inactive, return an error
+	if req.SessionID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Session ID is required",
+		})
+	}
+
+	// Get the status of the session using session ID
+	var session structures.Session
+	if err := s.Db.Where("session_id = ?", req.SessionID).First(&session).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Database error",
+		})
+	}
+	sessionStatus := session.SessionStatus
+
+	// Check if the session is inactive
+	if structures.SessionStatus(sessionStatus) != structures.Active {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Session is inactive",
+		})
+	}
+
 	// Initialize cart ID
 	cartID := req.CartID
 
@@ -57,7 +80,7 @@ func (s *Server) AddToCart(c *fiber.Ctx) error {
 	} else {
 		if err := s.Db.Model(&structures.Cart{}).
 			Where("cart_id = ?", cartID).
-			Update("total_amount", gorm.Expr("total_amount + ?", req.TotalAmount)).Error; err != nil {
+			Update("total_amount", req.TotalAmount).Error; err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to update cart total amount",
 			})
@@ -75,6 +98,7 @@ func (s *Server) AddToCart(c *fiber.Ctx) error {
 		}
 
 		newCartItem := structures.CartItem{
+			CartItemID:       item.CartItemId,
 			CartID:           cartID,
 			ItemID:           item.ItemID,
 			Quantity:         item.Quantity,
@@ -143,7 +167,7 @@ func (s *Server) GetCart(c *fiber.Ctx) error {
 
 	// Fetch cart items
 	var cartItems []structures.CartItem
-	if err := s.Db.Where("cart_id = ?", req.CartID).Find(&cartItems).Error; err != nil {
+	if err := s.Db.Where("cart_id = ? AND status != ?", req.CartID, structures.CartItemCanceled).Find(&cartItems).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch cart items",
 		})
@@ -184,6 +208,7 @@ func (s *Server) GetCart(c *fiber.Ctx) error {
 		}
 
 		cartItemResponses = append(cartItemResponses, structures.CartItemResponse{
+			CartItemId:           item.CartItemID,
 			ItemID:               item.ItemID,
 			Quantity:             item.Quantity,
 			Price:                item.Price,
@@ -214,7 +239,7 @@ func (s *Server) UpdateCustomizations(c *fiber.Ctx) error {
 
 	// Check if cart item exists
 	var cartItem structures.CartItem
-	if err := s.Db.Where("cart_id = ? AND item_id = ?", req.CartID, req.ItemID).
+	if err := s.Db.Where("cart_item_id = ?", req.CartItemId).
 		First(&cartItem).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -231,7 +256,7 @@ func (s *Server) UpdateCustomizations(c *fiber.Ctx) error {
 
 	// Update customizations using cart ID and item ID
 	if err := s.Db.Model(&structures.CartItem{}).
-		Where("cart_id = ? AND item_id = ?", req.CartID, req.ItemID).
+		Where("cart_item_id = ?", req.CartItemId).
 		Updates(map[string]interface{}{
 			"customization_ids": customizationJSON,
 			"updated_at":        time.Now(),
@@ -239,6 +264,15 @@ func (s *Server) UpdateCustomizations(c *fiber.Ctx) error {
 		}).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update customizations",
+		})
+	}
+
+	// Update total cart amount by direct reading CartAmount from the request body
+	if err := s.Db.Model(&structures.Cart{}).
+		Where("cart_id = ?", cartItem.CartID).
+		Update("total_amount", req.CartAmount).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to update cart total amount",
 		})
 	}
 
@@ -257,7 +291,7 @@ func (s *Server) UpdateCrossSellItems(c *fiber.Ctx) error {
 
 	// Check if cart item exists
 	var cartItem structures.CartItem
-	if err := s.Db.Where("cart_id = ? AND item_id = ?", req.CartID, req.ItemID).
+	if err := s.Db.Where("cart_item_id = ?", req.CartItemId).
 		First(&cartItem).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -274,7 +308,7 @@ func (s *Server) UpdateCrossSellItems(c *fiber.Ctx) error {
 
 	// Update cross-sell items using cart ID and item ID
 	if err := s.Db.Model(&structures.CartItem{}).
-		Where("cart_id = ? AND item_id = ?", req.CartID, req.ItemID).
+		Where("cart_item_id = ?", req.CartItemId).
 		Updates(map[string]interface{}{
 			"cross_sell_item_ids": crossSellJSON,
 			"updated_at":          time.Now(),
@@ -282,6 +316,15 @@ func (s *Server) UpdateCrossSellItems(c *fiber.Ctx) error {
 		}).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update cross-sell items",
+		})
+	}
+
+	// Update total cart amount by direct reading CartAmount from the request body
+	if err := s.Db.Model(&structures.Cart{}).
+		Where("cart_id = ?", cartItem.CartID).
+		Update("total_amount", req.CartAmount).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to update cart total amount",
 		})
 	}
 
@@ -301,7 +344,7 @@ func (s *Server) UpdateQuantity(c *fiber.Ctx) error {
 		})
 	}
 
-	if req.UpdateType != "add" && req.UpdateType != "remove" {
+	if req.UpdateType != "add" && req.UpdateType != "remove" && req.UpdateType != "delete" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid update type",
 		})
@@ -309,7 +352,7 @@ func (s *Server) UpdateQuantity(c *fiber.Ctx) error {
 
 	// Check if cart item exists
 	var cartItem structures.CartItem
-	if err := s.Db.Where("cart_id = ? AND item_id = ?", req.CartID, req.ItemID).
+	if err := s.Db.Where("cart_item_id = ?", req.CartItemId).
 		First(&cartItem).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -327,10 +370,28 @@ func (s *Server) UpdateQuantity(c *fiber.Ctx) error {
 		})
 	}
 
+	// if the update type is delete then update the status of the cart item as cancelled and send the response deleted successfully
+	if req.UpdateType == "delete" {
+		if err := s.Db.Model(&structures.CartItem{}).
+			Where("cart_item_id = ?", req.CartItemId).
+			Updates(map[string]interface{}{
+				"status":     structures.CartItemCanceled,
+				"updated_at": time.Now(),
+				"quantity":   0,
+			}).Error; err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to cancel cart item",
+			})
+		}
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message": "Cart item deleted successfully",
+		})
+	}
+
 	// If quantity is already 1, mark item as "Canceled"
 	if cartItem.Quantity == 1 && req.UpdateType == "remove" {
 		if err := s.Db.Model(&structures.CartItem{}).
-			Where("cart_id = ? AND item_id = ?", req.CartID, req.ItemID).
+			Where("cart_item_id = ?", req.CartItemId).
 			Updates(map[string]interface{}{
 				"status":     structures.CartItemCanceled,
 				"updated_at": time.Now(),
@@ -357,13 +418,22 @@ func (s *Server) UpdateQuantity(c *fiber.Ctx) error {
 	}
 
 	if err := s.Db.Model(&structures.CartItem{}).
-		Where("cart_id = ? AND item_id = ?", req.CartID, req.ItemID).
+		Where("cart_item_id = ?", req.CartItemId).
 		Updates(map[string]interface{}{
 			"quantity":   newQuantity,
 			"updated_at": time.Now(),
 		}).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update quantity",
+		})
+	}
+
+	// Update total cart amount by direct reading CartAmount from the request body
+	if err := s.Db.Model(&structures.Cart{}).
+		Where("cart_id = ?", cartItem.CartID).
+		Update("total_amount", req.CartAmount).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to update cart total amount",
 		})
 	}
 

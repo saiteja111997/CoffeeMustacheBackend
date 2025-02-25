@@ -14,7 +14,7 @@ func IsLambda() bool {
 
 func IsValid(addedvia structures.CartInsertType) bool {
 	switch structures.CartInsertType(addedvia) {
-	case structures.Direct, structures.CrossSellPopUp, structures.FromCuratedCart, structures.CrossSellFocus, structures.TopPicks, structures.UpgradeCartAi, structures.CrossSellCheckout:
+	case structures.Direct, structures.FromCuratedCart, structures.CrossSellFocus, structures.TopPicks, structures.UpgradeCartAi, structures.CrossSellCheckout:
 		return true
 	default:
 		return false
