@@ -41,6 +41,13 @@ func (s *Server) GetCrossSellData(c *fiber.Ctx) error {
 		})
 	}
 
+	// Check if this is a keep-warm event
+	if req.BaseItemID == 0 && req.CartID == "keep-warm" {
+		return c.Status(http.StatusOK).JSON(fiber.Map{
+			"message": "Lambda kept warm",
+		})
+	}
+
 	// Validate required fields
 	if req.BaseItemID == 0 {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{

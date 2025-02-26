@@ -74,6 +74,12 @@ functions:
           path: /getCrossSellData
           method: POST
           cors: true
+      - schedule:
+          rate: rate(5 minutes)  # Keeps the Lambda warm
+          enabled: true
+          input:
+            base_item_id: 0
+            cart_id: "keep-warm"
 
   GetCuratedCart:
     handler: bootstrap
