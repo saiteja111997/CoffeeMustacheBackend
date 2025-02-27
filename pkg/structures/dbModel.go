@@ -299,14 +299,15 @@ type CartItem struct {
 
 // Orders Table
 type Order struct {
-	OrderID       string      `gorm:"type:varchar(100);primaryKey" json:"order_id"`
-	CartID        string      `gorm:"type:varchar(100);not null" json:"cart_id"`
-	SessionID     string      `gorm:"type:varchar(100);not null" json:"session_id"`
-	UserID        uint        `gorm:"not null" json:"user_id"`
-	OrderStatus   OrderStatus `gorm:"type:varchar(50);not null" json:"order_status"`
-	TotalAmount   float64     `gorm:"type:decimal(10,2)" json:"total_amount"`
-	OrderTime     time.Time   `gorm:"autoCreateTime" json:"order_time"`
-	CompletedTime *time.Time  `json:"completed_time,omitempty"`
+	OrderID       string        `gorm:"type:varchar(100);primaryKey" json:"order_id"`
+	CartID        string        `gorm:"type:varchar(100);not null" json:"cart_id"`
+	SessionID     string        `gorm:"type:varchar(100);not null" json:"session_id"`
+	UserID        uint          `gorm:"not null" json:"user_id"`
+	OrderStatus   OrderStatus   `gorm:"type:varchar(50);not null" json:"order_status"`
+	PaymentStatus PaymentStatus `gorm:"type:varchar(50);not null" json:"payment_status"`
+	TotalAmount   float64       `gorm:"type:decimal(10,2)" json:"total_amount"`
+	OrderTime     time.Time     `gorm:"autoCreateTime" json:"order_time"`
+	CompletedTime *time.Time    `json:"completed_time,omitempty"`
 }
 
 type UpdateCartResult struct {
