@@ -374,6 +374,16 @@ func (s *Server) UpdateQuantity(c *fiber.Ctx) error {
 				"error": "Failed to cancel cart item",
 			})
 		}
+
+		// Update total cart amount by directly reading CartAmount from the request body
+		if err := s.Db.Model(&structures.Cart{}).
+			Where("cart_id = ?", cartItem.CartID).
+			Update("total_amount", req.CartAmount).Error; err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to update cart total amount",
+			})
+		}
+
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"message": "Cart item marked as canceled",
 		})
