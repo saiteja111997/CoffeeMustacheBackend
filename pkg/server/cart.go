@@ -391,7 +391,7 @@ func (s *Server) UpdateQuantity(c *fiber.Ctx) error {
 		})
 	}
 
-	// Update total cart amount by direct reading CartAmount from the request body
+	// Update total cart amount by directly reading CartAmount from the request body
 	if err := s.Db.Model(&structures.Cart{}).
 		Where("cart_id = ?", cartItem.CartID).
 		Update("total_amount", req.CartAmount).Error; err != nil {
