@@ -156,7 +156,7 @@ func main() {
 	}
 
 	db = db.Debug()
-	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.CuratedCart{}, &structures.CuratedCartItem{}, &structures.Session{}, &structures.UserSession{}, &structures.Cart{}, &structures.CartItem{}, &structures.Order{}, &structures.OrderItem{}, &structures.Order{}, &structures.OrderItem{}, &structures.UpdateCartResult{})
+	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.CuratedCart{}, &structures.CuratedCartItem{}, &structures.Session{}, &structures.UserSession{}, &structures.Cart{}, &structures.CartItem{}, &structures.Order{}, &structures.Order{}, &structures.UpdateCartResult{})
 	fmt.Println("Auto migration done!!")
 
 	defer db.Close()
@@ -195,6 +195,7 @@ func main() {
 	app.Post("/crossSellCheckout", ExtractJWT, svr.GetCheckoutCrossSells)
 	app.Post("/upgradeCart", ExtractJWT, svr.UpgradeCart)
 	app.Post("/getItemAudio", ExtractJWT, svr.GetItemAudio)
+	app.Post("/placeOrder", ExtractJWT, svr.PlaceOrder)
 
 	fmt.Println("Routing established!!")
 

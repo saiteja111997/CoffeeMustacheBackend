@@ -161,6 +161,14 @@ functions:
           method: POST
           cors: true
 
+  PlaceOrder:
+    handler: bootstrap
+    events:
+      - http:
+          path: /placeOrder
+          method: POST
+          cors: true
+
   
 
   

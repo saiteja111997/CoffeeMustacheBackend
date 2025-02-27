@@ -54,10 +54,6 @@ type OrderStatus string
 
 const (
 	OrderPlaced    OrderStatus = "Placed"
-	OrderConfirmed OrderStatus = "Confirmed"
-	OrderPreparing OrderStatus = "Preparing"
-	OrderReady     OrderStatus = "Ready"
-	OrderCompleted OrderStatus = "Completed"
 	OrderCancelled OrderStatus = "Cancelled"
 )
 
@@ -303,27 +299,14 @@ type CartItem struct {
 
 // Orders Table
 type Order struct {
-	OrderID       string        `gorm:"type:varchar(100);primaryKey" json:"order_id"`
-	CartID        string        `gorm:"type:varchar(100);not null" json:"cart_id"`
-	SessionID     string        `gorm:"type:varchar(100);not null" json:"session_id"`
-	UserID        uint          `gorm:"not null" json:"user_id"`
-	OrderStatus   OrderStatus   `gorm:"type:varchar(50);not null" json:"order_status"`
-	TotalAmount   float64       `gorm:"type:decimal(10,2)" json:"total_amount"`
-	PaymentMethod PaymentMethod `gorm:"type:varchar(50);not null" json:"payment_method"`
-	PaymentStatus PaymentStatus `gorm:"type:varchar(50);not null" json:"payment_status"`
-	OrderTime     time.Time     `gorm:"autoCreateTime" json:"order_time"`
-	CompletedTime *time.Time    `json:"completed_time,omitempty"`
-}
-
-// Order Items Table
-type OrderItem struct {
-	OrderItemID      uint           `gorm:"primaryKey;autoIncrement" json:"order_item_id"`
-	OrderID          string         `gorm:"type:varchar(100);not null" json:"order_id"`
-	ItemID           uint           `gorm:"not null" json:"item_id"`
-	Quantity         int            `gorm:"not null" json:"quantity"`
-	Price            float64        `gorm:"type:decimal(10,2)" json:"price"`
-	SpecialRequest   string         `gorm:"type:text" json:"special_request"`
-	CustomizationIDs datatypes.JSON `gorm:"type:jsonb" json:"customization_ids"` // Customization IDs as JSON array
+	OrderID       string      `gorm:"type:varchar(100);primaryKey" json:"order_id"`
+	CartID        string      `gorm:"type:varchar(100);not null" json:"cart_id"`
+	SessionID     string      `gorm:"type:varchar(100);not null" json:"session_id"`
+	UserID        uint        `gorm:"not null" json:"user_id"`
+	OrderStatus   OrderStatus `gorm:"type:varchar(50);not null" json:"order_status"`
+	TotalAmount   float64     `gorm:"type:decimal(10,2)" json:"total_amount"`
+	OrderTime     time.Time   `gorm:"autoCreateTime" json:"order_time"`
+	CompletedTime *time.Time  `json:"completed_time,omitempty"`
 }
 
 type UpdateCartResult struct {
