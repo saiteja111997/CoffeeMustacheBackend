@@ -53,6 +53,6 @@ type UpdateCrossSellItemsRequest struct {
 
 type UpdateQuantityRequest struct {
 	CartItemId string  `json:"cart_item_id" validate:"required"`
-	UpdateType string  `json:"update_type" validate:"required"`
+	Quantity   int     `json:"quantity" validate:"required"`
 	CartAmount float64 `json:"cart_amount" validate:"required"`
 }

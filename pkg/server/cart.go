@@ -334,19 +334,10 @@ func (s *Server) UpdateCrossSellItems(c *fiber.Ctx) error {
 }
 
 func (s *Server) UpdateQuantity(c *fiber.Ctx) error {
-
-	var newQuantity int
-
 	var req structures.UpdateQuantityRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid input",
-		})
-	}
-
-	if req.UpdateType != "add" && req.UpdateType != "remove" && req.UpdateType != "delete" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Invalid update type",
 		})
 	}
 
@@ -370,26 +361,8 @@ func (s *Server) UpdateQuantity(c *fiber.Ctx) error {
 		})
 	}
 
-	// if the update type is delete then update the status of the cart item as cancelled and send the response deleted successfully
-	if req.UpdateType == "delete" {
-		if err := s.Db.Model(&structures.CartItem{}).
-			Where("cart_item_id = ?", req.CartItemId).
-			Updates(map[string]interface{}{
-				"status":     structures.CartItemCanceled,
-				"updated_at": time.Now(),
-				"quantity":   0,
-			}).Error; err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to cancel cart item",
-			})
-		}
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"message": "Cart item deleted successfully",
-		})
-	}
-
-	// If quantity is already 1, mark item as "Canceled"
-	if cartItem.Quantity == 1 && req.UpdateType == "remove" {
+	// If quantity is zero, mark item as "Canceled"
+	if req.Quantity == 0 {
 		if err := s.Db.Model(&structures.CartItem{}).
 			Where("cart_item_id = ?", req.CartItemId).
 			Updates(map[string]interface{}{
@@ -406,21 +379,11 @@ func (s *Server) UpdateQuantity(c *fiber.Ctx) error {
 		})
 	}
 
-	if req.UpdateType == "add" {
-		newQuantity = cartItem.Quantity + 1
-	} else {
-		if cartItem.Quantity == 0 {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Cannot remove item from cart with a quantity of 0",
-			})
-		}
-		newQuantity = cartItem.Quantity - 1
-	}
-
+	// Update the quantity
 	if err := s.Db.Model(&structures.CartItem{}).
 		Where("cart_item_id = ?", req.CartItemId).
 		Updates(map[string]interface{}{
-			"quantity":   newQuantity,
+			"quantity":   req.Quantity,
 			"updated_at": time.Now(),
 		}).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -439,6 +402,6 @@ func (s *Server) UpdateQuantity(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message":  "Quantity updated successfully",
-		"quantity": newQuantity,
+		"quantity": req.Quantity,
 	})
 }
