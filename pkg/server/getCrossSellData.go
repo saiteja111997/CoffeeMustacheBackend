@@ -24,6 +24,7 @@ type CrossSellResponse struct {
 	Price             float64 `json:"price"`
 	Category          string  `json:"category"`
 	ImageURL          string  `json:"image_url"`
+	ShortDescription  string  ` json:"short_description"`
 	ItemName          string  `json:"item_name"`
 }
 
@@ -69,6 +70,7 @@ func (s *Server) GetCrossSellData(c *fiber.Ctx) error {
 				mi.price,
 				mi.category,
 				mi.image_url,
+				mi.short_description,
 				mi.name AS item_name
 			FROM cross_sells cs
 			JOIN menu_items mi ON cs.cross_sell_item_id = mi.id
@@ -119,6 +121,7 @@ func (s *Server) GetCrossSellData(c *fiber.Ctx) error {
 				cs.description,
 				mi.price,
 				mi.category,
+				mi.short_description,
 				mi.image_url,
 				mi.name AS item_name
 			FROM cross_sells cs

@@ -13,12 +13,13 @@ type CheckoutCrossSellRequest struct {
 }
 
 type CheckoutCrossSellResponse struct {
-	ItemID   uint    `json:"item_id"`
-	Name     string  `json:"name"`
-	Category string  `json:"category"`
-	Price    float64 `json:"price"`
-	ImageURL string  `json:"image_url"`
-	Tag      string  `json:"tag"`
+	ShortDescription string  `json:"short_description"`
+	ItemID           uint    `json:"item_id"`
+	Name             string  `json:"name"`
+	Category         string  `json:"category"`
+	Price            float64 `json:"price"`
+	ImageURL         string  `json:"image_url"`
+	Tag              string  `json:"tag"`
 }
 
 func (s *Server) GetCheckoutCrossSells(c *fiber.Ctx) error {
@@ -42,7 +43,7 @@ func (s *Server) GetCheckoutCrossSells(c *fiber.Ctx) error {
 	go func() {
 		defer wg.Done()
 		err := s.Db.Raw(`
-			SELECT id AS item_id, name, cm_category AS category, price, image_url, tag
+			SELECT id AS item_id, name, cm_category AS category, price, image_url, tag, short_description
 			FROM menu_items 
 			WHERE cm_category IN ('Desserts & Sweets', 'Beverages') 
 			AND tag IN ('bestseller', 'bestrated') 

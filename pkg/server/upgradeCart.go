@@ -20,13 +20,14 @@ type UpgradeCartRequest struct {
 }
 
 type UpgradeCartResponse struct {
-	ItemID          uint    `json:"item_id"`
-	Name            string  `json:"name"`
-	Category        string  `json:"category"`
-	Price           float64 `json:"price"`
-	UserReason      string  `json:"user_reason"`
-	ReferenceReason string  `json:"reference_reason"`
-	ImageURL        string  `json:"image_url"`
+	ShortDescription string  `json:"short_description"`
+	ItemID           uint    `json:"item_id"`
+	Name             string  `json:"name"`
+	Category         string  `json:"category"`
+	Price            float64 `json:"price"`
+	UserReason       string  `json:"user_reason"`
+	ReferenceReason  string  `json:"reference_reason"`
+	ImageURL         string  `json:"image_url"`
 }
 
 func (s *Server) UpgradeCart(c *fiber.Ctx) error {
@@ -241,6 +242,7 @@ func (s *Server) UpgradeCart(c *fiber.Ctx) error {
 			return
 		}
 		recommendedItem.ImageURL = menuItem.ImageURL // Populate image URL from menu items table
+		recommendedItem.ShortDescription = menuItem.ShortDescription
 	}()
 
 	wg.Wait()
