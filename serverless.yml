@@ -169,6 +169,14 @@ functions:
           method: POST
           cors: true
 
+  FetchOrderDetails:
+    handler: bootstrap
+    events:
+      - http:
+          path: /fetchOrderDetails
+          method: POST
+          cors: true
+
   
 
   
