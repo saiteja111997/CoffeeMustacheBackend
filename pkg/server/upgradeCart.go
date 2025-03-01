@@ -234,6 +234,7 @@ func (s *Server) UpgradeCart(c *fiber.Ctx) error {
 	}()
 
 	// Get image url from menu items and populate in the response
+	// object
 	go func() {
 		defer wg.Done()
 		var menuItem structures.MenuItem
