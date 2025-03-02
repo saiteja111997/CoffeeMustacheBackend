@@ -275,14 +275,15 @@ type UserSession struct {
 
 // Cart Table
 type Cart struct {
-	CartID      string     `gorm:"type:varchar(100);primaryKey" json:"cart_id"`
-	SessionID   string     `gorm:"type:varchar(100);not null" json:"session_id"`
-	UserID      uint       `gorm:"not null" json:"user_id"`
-	CartStatus  CartStatus `gorm:"type:varchar(50);not null" json:"cart_status"`
-	TotalAmount float64    `gorm:"type:decimal(10,2)" json:"total_amount"`
-	Note        string     `gorm:"type:text" json:"note"`
-	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt   time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
+	CartID         string     `gorm:"type:varchar(100);primaryKey" json:"cart_id"`
+	SessionID      string     `gorm:"type:varchar(100);not null" json:"session_id"`
+	UserID         uint       `gorm:"not null" json:"user_id"`
+	CartStatus     CartStatus `gorm:"type:varchar(50);not null" json:"cart_status"`
+	TotalAmount    float64    `gorm:"type:decimal(10,2)" json:"total_amount"`
+	DiscountAmount float64    `gorm:"type:decimal(10,2)" json:"discount_amount"`
+	Note           string     `gorm:"type:text" json:"note"`
+	CreatedAt      time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt      time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 type CartItem struct {

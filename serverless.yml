@@ -36,6 +36,7 @@ functions:
   
   AskMenuAI:
    handler: bootstrap
+   timeout: 30
    events:
      - http:
          path: /askMenuAI
@@ -60,6 +61,7 @@ functions:
 
   CreateCuratedCartsJob:
     handler: bootstrap
+    timeout: 300
     environment:
       FUNCTION_NAME: "curatedCartCronJob"
     events:
@@ -73,6 +75,7 @@ functions:
 
   GetCrossSellData:
     handler: bootstrap
+    timeout: 30
     events:
       - http:
           path: /getCrossSellData

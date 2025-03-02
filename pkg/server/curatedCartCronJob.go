@@ -15,9 +15,18 @@ import (
 	"gorm.io/datatypes"
 )
 
+type menuItemInput struct {
+	ID               uint    `gorm:"primaryKey;autoIncrement" json:"id"`
+	Category         string  `gorm:"type:varchar(50);not null" json:"category"`
+	SubCategory      string  `gorm:"type:varchar(50)" json:"sub_category"`
+	Name             string  `gorm:"type:varchar(100);not null" json:"name"`
+	ShortDescription string  `gorm:"type:varchar(255)" json:"short_description"`
+	Price            float64 `gorm:"type:decimal(10,2);not null" json:"price"`
+}
+
 func (s *Server) RunCuratedCartsJob(c *fiber.Ctx) error {
 
-	var menuItems []structures.MenuItem
+	var menuItems []menuItemInput
 	if err := s.Db.Table("menu_items").Find(&menuItems).Error; err != nil {
 		log.Println("❌ Failed to fetch menu items:", err)
 		return err
@@ -29,7 +38,8 @@ func (s *Server) RunCuratedCartsJob(c *fiber.Ctx) error {
 	- Have a catchy name
 	- Contain a well-balanced mix of items across categories (e.g., a drink, a main, and a dessert)
 	- Ensure a reasonable total price
-	- Be output as JSON: [{"name": "Morning Bliss", "item_ids": [1,2,3], "time_of_day": "morning"}]`, menuItems)
+	- Be output as JSON: [{"name": "Morning Bliss", "item_ids": [1,2,3], "time_of_day": "morning"}]
+	- In the response just give the list of items, nothing else`, menuItems)
 
 	requestBody, _ := json.Marshal(map[string]interface{}{
 		"model":      "gpt-4o",

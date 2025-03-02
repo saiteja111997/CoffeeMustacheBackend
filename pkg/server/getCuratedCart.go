@@ -92,13 +92,16 @@ func (s *Server) GetCuratedCart(c *fiber.Ctx) error {
 
 		// Add cart and items to response
 		response = append(response, CuratedCartResponse{
-			ID:        cart.ID,
-			CafeID:    cart.CafeID,
-			Name:      cart.Name,
-			TimeOfDay: string(cart.TimeOfDay),
-			Date:      cart.Date.Format("2006-01-02"),
-			Source:    cart.Source,
-			Items:     itemDetails,
+			ID:              cart.ID,
+			CafeID:          cart.CafeID,
+			Name:            cart.Name,
+			TimeOfDay:       string(cart.TimeOfDay),
+			Date:            cart.Date.Format("2006-01-02"),
+			Source:          cart.Source,
+			CartTotal:       cart.CartTotal,
+			DiscountedTotal: cart.DiscountedTotal,
+			DiscountPercent: cart.DiscountPercent,
+			Items:           itemDetails,
 		})
 	}
 

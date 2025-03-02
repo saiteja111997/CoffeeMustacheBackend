@@ -62,13 +62,14 @@ func (s *Server) AddToCart(c *fiber.Ctx) error {
 		cartID = ksuid.New().String()
 
 		newCart := structures.Cart{
-			CartID:      cartID,
-			SessionID:   req.SessionID,
-			UserID:      userId,
-			CartStatus:  structures.CartActive,
-			TotalAmount: req.TotalAmount,
-			CreatedAt:   time.Now(),
-			UpdatedAt:   time.Now(),
+			CartID:         cartID,
+			SessionID:      req.SessionID,
+			UserID:         userId,
+			CartStatus:     structures.CartActive,
+			TotalAmount:    req.TotalAmount,
+			DiscountAmount: req.DiscountAmount,
+			CreatedAt:      time.Now(),
+			UpdatedAt:      time.Now(),
 		}
 
 		// Insert new cart into the database
@@ -80,9 +81,12 @@ func (s *Server) AddToCart(c *fiber.Ctx) error {
 	} else {
 		if err := s.Db.Model(&structures.Cart{}).
 			Where("cart_id = ?", cartID).
-			Update("total_amount", req.TotalAmount).Error; err != nil {
+			Updates(map[string]interface{}{
+				"total_amount":    req.TotalAmount,
+				"discount_amount": req.DiscountAmount,
+			}).Error; err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to update cart total amount",
+				"error": "Failed to update cart amounts",
 			})
 		}
 	}
