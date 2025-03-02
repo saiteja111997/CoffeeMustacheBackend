@@ -171,7 +171,7 @@ func main() {
 	// Handle specific functions differently
 	switch functionName {
 	case "curatedCartCronJob":
-		svr.RunCuratedCartsJob()
+		svr.RunCuratedCartsJob(nil)
 		return
 	default:
 		fmt.Println("Proceeding with normal server setup")
@@ -186,6 +186,7 @@ func main() {
 	app.Post("/getFilteredList", ExtractJWT, svr.GetFilteredList)
 	app.Post("/getCrossSellData", ExtractJWT, svr.GetCrossSellData)
 	app.Post("/recordUserSession", ExtractJWT, svr.RecordUserSession)
+	app.Get("/curatedCartCronJob", svr.RunCuratedCartsJob)
 	app.Post("/getCuratedCart", ExtractJWT, svr.GetCuratedCart)
 	app.Post("/addToCart", ExtractJWT, svr.AddToCart)
 	app.Post("/getCart", ExtractJWT, svr.GetCart)

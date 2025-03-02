@@ -228,15 +228,19 @@ type CrossSell struct {
 }
 
 type CuratedCart struct {
-	ID        uint           `gorm:"primaryKey" json:"id"`
-	CafeID    uint           `gorm:"index;not null" json:"cafe_id"`
-	Name      string         `gorm:"type:varchar(255);not null" json:"name"`
-	TimeOfDay TimeOfDay      `gorm:"type:varchar(50);not null" json:"time_of_day"`
-	Date      time.Time      `gorm:"type:date;index" json:"date"`
-	Source    string         `gorm:"type:varchar(50);default:'ai'" json:"source"`
-	ItemIDs   datatypes.JSON `gorm:"type:jsonb"`
-	ImageURL  string         `gorm:"type:varchar(255)" json:"image_url"`
-	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	ID              uint           `gorm:"primaryKey" json:"id"`
+	CafeID          uint           `gorm:"index;not null" json:"cafe_id"`
+	Name            string         `gorm:"type:varchar(255);not null" json:"name"`
+	TimeOfDay       TimeOfDay      `gorm:"type:varchar(50);not null" json:"time_of_day"`
+	Date            time.Time      `gorm:"type:date" json:"date"`
+	CartTotal       float64        `gorm:"type:decimal(10,2)" json:"cart_total"`
+	DiscountedTotal float64        `gorm:"type:decimal(10,2)" json:"discounted_total"`
+	DiscountPercent float64        `gorm:"type:decimal(10,2)" json:"discount_percent"`
+	Source          string         `gorm:"type:varchar(50);default:'ai'" json:"source"`
+	ButtonActions   int            `gorm:"type:int;index" json:"button_actions"`
+	ItemIDs         datatypes.JSON `gorm:"type:jsonb"`
+	ImageURL        string         `gorm:"type:varchar(255)" json:"image_url"`
+	CreatedAt       time.Time      `gorm:"autoCreateTime" json:"created_at"`
 }
 
 type CuratedCartItem struct {

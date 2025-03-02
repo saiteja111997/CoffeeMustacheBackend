@@ -63,6 +63,10 @@ functions:
     environment:
       FUNCTION_NAME: "curatedCartCronJob"
     events:
+      - http:
+          path: /curatedCartCronJob
+          method: GET
+          cors: true
       - schedule:
           rate: cron(30 1 * * ? *)  # Runs every day at 1:30 AM UTC
           enabled: true

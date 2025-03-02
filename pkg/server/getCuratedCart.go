@@ -53,13 +53,16 @@ func (s *Server) GetCuratedCart(c *fiber.Ctx) error {
 
 	// Prepare a response with carts and their items, including item name and price
 	type CuratedCartResponse struct {
-		ID        uint                            `json:"id"`
-		CafeID    uint                            `json:"cafe_id"`
-		Name      string                          `json:"name"`
-		TimeOfDay string                          `json:"time_of_day"`
-		Date      string                          `json:"date"`
-		Source    string                          `json:"source"`
-		Items     []CuratedCartItemDetailResponse `json:"items"`
+		ID              uint                            `json:"id"`
+		CafeID          uint                            `json:"cafe_id"`
+		Name            string                          `json:"name"`
+		TimeOfDay       string                          `json:"time_of_day"`
+		Date            string                          `json:"date"`
+		Source          string                          `json:"source"`
+		CartTotal       float64                         `json:"cart_total"`
+		DiscountedTotal float64                         `json:"discounted_total"`
+		DiscountPercent float64                         `json:"discount_percent"`
+		Items           []CuratedCartItemDetailResponse `json:"items"`
 	}
 
 	var response []CuratedCartResponse

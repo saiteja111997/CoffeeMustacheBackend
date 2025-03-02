@@ -11,10 +11,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"gorm.io/datatypes"
 )
 
-func (s *Server) RunCuratedCartsJob() error {
+func (s *Server) RunCuratedCartsJob(c *fiber.Ctx) error {
 
 	var menuItems []structures.MenuItem
 	if err := s.Db.Table("menu_items").Find(&menuItems).Error; err != nil {
@@ -89,13 +90,38 @@ func (s *Server) RunCuratedCartsJob() error {
 			continue
 		}
 
+		// Calculate cart total amount
+		var totalAmount float64
+		for _, itemID := range cart.ItemIDs {
+			var item structures.MenuItem
+			if err := s.Db.Where("id =?", itemID).First(&item).Error; err != nil {
+				log.Println("Failed to fetch item:", err)
+				continue
+			}
+			totalAmount += item.Price
+		}
+
+		// Calculate dicount amount. If the cart value is more than 1200 give 10% of the total amount else 15% of the total amount
+		discountAmount, discountPercent := 0.0, 0.0
+		if totalAmount > 1200 {
+			discountAmount = 0.10 * totalAmount
+			discountPercent = 10
+		} else {
+			discountAmount = 0.15 * totalAmount
+			discountPercent = 15
+		}
+
 		curatedCart := structures.CuratedCart{
-			CafeID:    1, // Replace with actual CafeID if needed
-			Name:      cart.Name,
-			TimeOfDay: cart.TimeOfDay,
-			Date:      time.Now(),
-			Source:    "ai",
-			ItemIDs:   datatypes.JSON(itemIDsJSON),
+			CafeID:          1, // Replace with actual CafeID if needed
+			Name:            cart.Name,
+			TimeOfDay:       cart.TimeOfDay,
+			Date:            time.Now(),
+			Source:          "ai",
+			CartTotal:       totalAmount,
+			DiscountedTotal: totalAmount - discountAmount,
+			DiscountPercent: discountPercent,
+			ButtonActions:   0, // Replace with actual button actions if needed, e.g., 3 for 3-button action carts
+			ItemIDs:         datatypes.JSON(itemIDsJSON),
 		}
 		if err := s.Db.Table("curated_carts").Create(&curatedCart).Error; err != nil {
 			log.Println("❌ Failed to insert curated cart:", err)
