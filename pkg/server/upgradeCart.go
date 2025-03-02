@@ -27,6 +27,8 @@ type UpgradeCartResponse struct {
 	Price            float64 `json:"price"`
 	UserReason       string  `json:"user_reason"`
 	ReferenceReason  string  `json:"reference_reason"`
+	DiscountedPrice  float64 `json:"discounted_price"`
+	DiscountPercent  float64 `json:"discount_percent"`
 	ImageURL         string  `json:"image_url"`
 }
 
@@ -210,6 +212,11 @@ func (s *Server) UpgradeCart(c *fiber.Ctx) error {
 		})
 	}
 
+	// Based on the recommended item calculate the DiscountedPrice given DiscountPercentage is 20%
+	discountedPrice := recommendedItem.Price * (1 - 0.20)
+	recommendedItem.DiscountedPrice = discountedPrice
+	recommendedItem.DiscountPercent = 20
+
 	wg.Add(2)
 
 	// Insert AI suggestion into update_cart_result table
@@ -226,6 +233,8 @@ func (s *Server) UpgradeCart(c *fiber.Ctx) error {
 			UserReason:            recommendedItem.UserReason,
 			ReferenceReason:       recommendedItem.ReferenceReason,
 			UserAction:            "pending",
+			DiscountedPrice:       discountedPrice,
+			DiscountPercent:       20,
 		}
 
 		if err := s.Db.Create(&newEntry).Error; err != nil {

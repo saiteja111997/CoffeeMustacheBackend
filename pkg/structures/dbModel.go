@@ -191,7 +191,8 @@ type MenuItem struct {
 	ServingSize      string       `gorm:"type:varchar(50)" json:"serving_size"`
 	Calories         int          `gorm:"type:int" json:"calories"`
 	PreparationTime  int          `gorm:"type:int" json:"preparation_time"`
-	Discount         float64      `gorm:"type:decimal(5,2)" json:"discount"`
+	Discount         float64      `gorm:"type: decimal(5,2); default:0.0" json:"discount"`
+	DiscountSection  string       `gorm:"type:varchar(255)" json:"discount_section"`
 	PopularityScore  float64      `gorm:"default:0.0" json:"popularity_score"`
 	ImageURL         string       `gorm:"type:varchar(255)" json:"image_url"`
 	AvailableFrom    string       `gorm:"type:varchar(255)" json:"available_from"`
@@ -325,6 +326,8 @@ type UpdateCartResult struct {
 	AIResponse            string    `gorm:"type:jsonb;not null" json:"ai_response"`
 	UserReason            string    `gorm:"type:text" json:"user_reason"`
 	ReferenceReason       string    `gorm:"type:text" json:"reference_reason"`
+	DiscountedPrice       float64   `gorm:"type:decimal(5,2)" json:"discounted_price"`
+	DiscountPercent       float64   `gorm:"type:decimal(5,2)" json:"discount_percent"`
 	UserAction            string    `gorm:"type:varchar(50);default:'pending'" json:"user_action"` // "added", "ignored", "pending"
 	CreatedAt             time.Time `gorm:"autoCreateTime" json:"created_at"`
 }

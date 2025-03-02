@@ -1,9 +1,7 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
-	"sync"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -20,11 +18,12 @@ type CheckoutCrossSellResponse struct {
 	Price            float64 `json:"price"`
 	ImageURL         string  `json:"image_url"`
 	Tag              string  `json:"tag"`
+	DiscountedPrice  float64 `json:"discounted_price"`
+	DiscountPercent  float64 `json:"discount_percent"`
 }
 
 func (s *Server) GetCheckoutCrossSells(c *fiber.Ctx) error {
 	var req CheckoutCrossSellRequest
-	var wg sync.WaitGroup
 
 	// Parse request
 	if err := c.BodyParser(&req); err != nil {
@@ -36,26 +35,20 @@ func (s *Server) GetCheckoutCrossSells(c *fiber.Ctx) error {
 	// Parallel Fetching
 	var bestItems []CheckoutCrossSellResponse
 	var fetchErr error
-
-	wg.Add(1)
-
-	// Fetch Bestselling & Best-Rated Desserts and Drinks
-	go func() {
-		defer wg.Done()
-		err := s.Db.Raw(`
-			SELECT id AS item_id, name, cm_category AS category, price, image_url, tag, short_description
+	err := s.Db.Raw(`
+			SELECT id AS item_id, name, cm_category AS category, price, image_url, tag, short_description, 
+				   discount as discount_percent, 
+				   ROUND(price - (price * discount / 100)) AS discounted_price
 			FROM menu_items 
 			WHERE cm_category IN ('Desserts & Sweets', 'Beverages') 
 			AND tag IN ('bestseller', 'bestrated') 
 			AND id NOT IN (?) 
+			AND discount_section IN ('CrossSellCheckout')
 			ORDER BY popularity_score DESC
 		`, req.ItemIDs).Scan(&bestItems).Error
-		if err != nil {
-			fetchErr = err
-		}
-	}()
-
-	wg.Wait()
+	if err != nil {
+		fetchErr = err
+	}
 
 	// Handle errors
 	if fetchErr != nil {
@@ -63,8 +56,6 @@ func (s *Server) GetCheckoutCrossSells(c *fiber.Ctx) error {
 			"error": "Failed to fetch checkout cross-sell items",
 		})
 	}
-
-	fmt.Println("Cross-Sell Items:", bestItems)
 
 	// Return Response
 	return c.Status(http.StatusOK).JSON(fiber.Map{
