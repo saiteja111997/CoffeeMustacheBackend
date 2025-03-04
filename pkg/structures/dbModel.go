@@ -350,3 +350,14 @@ type Discount struct {
 	OrderId       string  `gorm:"type:varchar(100)" json:"order_id"`
 	UserId        uint    `gorm:"not null" json:"user_id"`
 }
+
+type MenuAIRecords struct {
+	PromptId     string    `gorm:"primaryKey;type:varchar(100)" json:"prompt_id"`
+	UserId       uint      `gorm:"not null" json:"user_id"`
+	CafeId       uint      `gorm:"not null" json:"cafe_id"`
+	GeneratedSql string    `gorm:"type:varchar(255)" json:"generated_sql"`
+	Answer       string    `gorm:"type:text" json:"answer"`
+	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
+	Prompt       string    `gorm:"type:text" json:"prompt"`
+	UserResponse bool      `gorm:"default:false" json:"user_response"`
+}

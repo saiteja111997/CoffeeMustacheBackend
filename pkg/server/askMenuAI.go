@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/segmentio/ksuid"
 )
 
 type AIRequest struct {
@@ -57,7 +58,7 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 	// Extract item names from the result
 	itemNames := make([]string, len(items))
 	for i, item := range items {
-		itemNames[i] = item.Name
+		itemNames[i] = item.Name + ","
 	}
 
 	prompt := fmt.Sprintf(`
@@ -181,7 +182,7 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 	- _"Give me gluten-free pastas under 400."_
 	SELECT * FROM menu_items WHERE category LIKE '%%pasta%%' AND dietary_labels LIKE '%%gluten-free%%' AND price < 400;
 	-_Suggest me some best selling cold coffees in this cafe_
-	SELECT * FROM menu_items WHERE category LIKE '%%cold coffee%%' OR tag = 'bestseller' AND category LIKE '%%cold coffee%% ORDER BY DESC popularity_score '
+	SELECT * FROM menu_items WHERE category LIKE '%%cold coffee%%' AND category LIKE '%%cold coffee%% ORDER BY DESC popularity_score '
 
 	### **📌 Available Categories:**
 	1. Beverages
@@ -255,6 +256,8 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP	
 	);
 	`, userQuery, categoryList, itemNames)
+
+	// fmt.Println("Prompt : ", prompt)
 
 	// Call OpenAI API
 	requestBody, err := json.Marshal(map[string]interface{}{
@@ -340,6 +343,21 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 	responseText := aiResponse["response"]
 	if len(menu) == 0 {
 		responseText = "This cafe does not have any matching items."
+	}
+
+	// Update in MenuAIRecords table
+	menuAIRecord := structures.MenuAIRecords{
+		PromptId:     ksuid.New().String(),
+		CafeId:       aiRequest.CafeID, // Assuming CafeID is used as UserId here
+		UserId:       uint(c.Locals("userId").(float64)),
+		Answer:       responseText,
+		GeneratedSql: aiResponse["sql"],
+		CreatedAt:    time.Now(),
+		Prompt:       userQuery,
+	}
+
+	if err := s.Db.Create(&menuAIRecord).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to save AI record"})
 	}
 
 	return c.JSON(fiber.Map{
