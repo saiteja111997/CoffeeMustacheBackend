@@ -6,6 +6,14 @@ import (
 	"gorm.io/datatypes"
 )
 
+// UserStatus Enum
+type UserStatus string
+
+const (
+	UserActive   UserStatus = "Active"
+	UserInactive UserStatus = "Inactive"
+)
+
 // SessionStatus Enum
 type SessionStatus string
 
@@ -271,6 +279,7 @@ type UserSession struct {
 	UserID        uint       `gorm:"not null" json:"user_id"`
 	JoinedAt      time.Time  `gorm:"autoCreateTime" json:"joined_at"`
 	LeftAt        *time.Time `json:"left_at,omitempty"`
+	Status        UserStatus `json:"status"`
 	Role          UserRole   `gorm:"type:varchar(50);not null" json:"role"`
 }
 
@@ -330,4 +339,14 @@ type UpdateCartResult struct {
 	DiscountPercent       float64   `gorm:"type:decimal(5,2)" json:"discount_percent"`
 	UserAction            string    `gorm:"type:varchar(50);default:'pending'" json:"user_action"` // "added", "ignored", "pending"
 	CreatedAt             time.Time `gorm:"autoCreateTime" json:"created_at"`
+}
+
+type Discount struct {
+	ID            uint    `gorm:"primaryKey;autoIncrement" json:"id"`
+	CafeID        uint    `gorm:"not null" json:"cafe_id"`
+	DiscountType  string  `gorm:"type:varchar(50)" json:"discount_type"`
+	DiscountValue float64 `gorm:"type:decimal(5,2)" json:"discount_value"`
+	TotalCost     float64 `gorm:"type:decimal(10,2)" json:"total_cost"`
+	OrderId       string  `gorm:"type:varchar(100)" json:"order_id"`
+	UserId        uint    `gorm:"not null" json:"user_id"`
 }

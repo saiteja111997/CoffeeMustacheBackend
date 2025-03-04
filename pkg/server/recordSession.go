@@ -61,14 +61,15 @@ func (s *Server) RecordUserSession(c *fiber.Ctx) error {
 
 	// Check if there is an existing user session for the given session ID
 	var userSession structures.UserSession
-	if err := s.Db.Where("session_id = ? AND user_id = ?", session.SessionID, userId).First(&userSession).Error; err != nil {
-		// If no user session exists, create a new user session
+	if err := s.Db.Where("session_id = ? AND user_id = ? AND status = ?", session.SessionID, userId, structures.UserActive).First(&userSession).Error; err != nil {
+		// If no active user session exists, create a new user session
 		newUserSession := structures.UserSession{
 			UserSessionID: ksuid.New().String(),
 			SessionID:     session.SessionID,
 			UserID:        userId,
+			Status:        structures.UserActive,
 			JoinedAt:      time.Now(),
-			Role:          role, // Default role as Guest
+			Role:          role, // Default role as Guest or Host
 		}
 
 		if err := s.Db.Create(&newUserSession).Error; err != nil {
@@ -86,5 +87,48 @@ func (s *Server) RecordUserSession(c *fiber.Ctx) error {
 		"session_id":      session.SessionID,
 		"user_session_id": userSession.UserSessionID,
 		"user_id":         userId,
+	})
+}
+
+func (s *Server) InvalidateSession(c *fiber.Ctx) error {
+	// Parse session ID from request body
+	type InvalidateSessionRequest struct {
+		SessionID string `json:"session_id"`
+	}
+
+	var req InvalidateSessionRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid input",
+		})
+	}
+
+	// Find and update the session status to Inactive and set the end time
+	if err := s.Db.Model(&structures.Session{}).
+		Where("session_id = ?", req.SessionID).
+		Updates(map[string]interface{}{
+			"session_status": structures.Inactive,
+			"end_time":       time.Now(),
+		}).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to invalidate session",
+		})
+	}
+
+	// Invalidate the user sessions related to this session ID by setting LeftAt and updating the status
+	if err := s.Db.Model(&structures.UserSession{}).
+		Where("session_id = ? AND left_at IS NULL", req.SessionID).
+		Updates(map[string]interface{}{
+			"left_at": time.Now(),
+			"status":  structures.UserInactive,
+		}).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to invalidate user sessions",
+		})
+	}
+
+	// Return success response
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Session invalidated successfully",
 	})
 }

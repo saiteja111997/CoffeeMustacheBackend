@@ -45,6 +45,7 @@ type PlaceOrderRequest struct {
 	CartID      string  `json:"cart_id"`
 	SessionID   string  `json:"session_id"`
 	TotalAmount float64 `json:"total_amount"`
+	Discount    float64 `json:"discount"`
 }
 
 // PlaceOrderResponse represents the response payload

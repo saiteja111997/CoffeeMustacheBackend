@@ -45,6 +45,21 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 	categoryList := strings.Join(categories, ", ")
 
 	// Dynamically include user query in the AI prompt
+	var items []structures.MenuItem
+	err = s.Db.Raw(`
+		SELECT name FROM menu_items WHERE cafe_id = ?
+	`, aiRequest.CafeID).Scan(&items).Error
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch items"})
+	}
+
+	// Extract item names from the result
+	itemNames := make([]string, len(items))
+	for i, item := range items {
+		itemNames[i] = item.Name
+	}
+
 	prompt := fmt.Sprintf(`
 	You are an AI trained to generate SQL queries based on user prompts. Your goal is to accurately interpret user queries and generate SQL queries based on **intent**, not just exact keyword matches.
 
@@ -57,8 +72,12 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 	- Provide a **human-readable response** explaining the generated query.
 	- Use proper SQL syntax, ensuring that wildcard searches use **LIKE '%%value%%'** instead of incorrect placeholders.
 	- When filtering by **categories**, also consider **cm_category** in addition to category, since different cafes may have unique category names.
+	- If it is a item based query, return the query which directly contain the item names. I have also provided item details in the prompt.
 
 	### **Available Categories in this Cafe:**
+	%s
+
+	### **Available Items in this Cafe:**
 	%s
 
 	### **Response Format:**
@@ -73,6 +92,14 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 	}
 
 	### **✅ Supported Scenarios**
+
+	### **Item Based Queires** (FOR THESE KIND OF QUERIES USE ITEM NAMES PROVIDED IN THE PROMPT DIRECTLY IN THE QUERY USING %%LIKE%%)
+	- _"Does this cafe has tiramisu."_
+	SELECT * FROM menu_items WHERE name LIKE '%%tiramisu%%';
+	- "Suggest me some coffees."_
+	SELECT * FROM menu_items WHERE name LIKE '%%(Item names which you think will be the items user is requesting, get the item name from the menu items provided in the prompt under  **Available Items in this Cafe:**)%%';
+
+
 	#### **1️⃣ Price-Based Queries**
 	- _"Show me items below 300."_
 	SELECT * FROM menu_items WHERE price < 300;
@@ -153,6 +180,8 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 	SELECT * FROM menu_items WHERE rating > 4.5 AND spice_level = 'spicy' AND dietary_labels LIKE '%%vegan%%';
 	- _"Give me gluten-free pastas under 400."_
 	SELECT * FROM menu_items WHERE category LIKE '%%pasta%%' AND dietary_labels LIKE '%%gluten-free%%' AND price < 400;
+	-_Suggest me some best selling cold coffees in this cafe_
+	SELECT * FROM menu_items WHERE category LIKE '%%cold coffee%%' OR tag = 'bestseller' AND category LIKE '%%cold coffee%% ORDER BY DESC popularity_score '
 
 	### **📌 Available Categories:**
 	1. Beverages
@@ -186,6 +215,14 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 	3. Spicy
 	4. Extra Spicy
 
+	### **📌 Available cm_category:**
+		1. Beverages
+		2. Breakfast & Brunch
+		3. Appetizers & Small Bites
+		4. Main Course
+		5. Breads & Sides
+		6. Desserts & Sweets
+
 	### **📌 Menu Items Schema:**
 	CREATE TABLE menu_items (
 		id SERIAL PRIMARY KEY,
@@ -213,10 +250,11 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 		available_all_day BOOLEAN DEFAULT TRUE,
 		is_available BOOLEAN DEFAULT TRUE,
 		tag VARCHAR(255),
+		cm_category varchar(50),
 		rating FLOAT DEFAULT 0.0 NOT NULL,
-		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP	
 	);
-	`, userQuery, categoryList)
+	`, userQuery, categoryList, itemNames)
 
 	// Call OpenAI API
 	requestBody, err := json.Marshal(map[string]interface{}{

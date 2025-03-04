@@ -184,6 +184,14 @@ functions:
           method: POST
           cors: true
 
+  InvalidateSession:
+    handler: bootstrap
+    events:
+      - http:
+          path: /invalidateSession
+          method: POST
+          cors: true
+
   
 
   

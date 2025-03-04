@@ -62,10 +62,10 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 
 	// Use a wait group to perform both updates in parallel
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 
 	// Error variables to capture errors from goroutines
-	var cartUpdateErr, cartItemsUpdateErr error
+	var cartUpdateErr, cartItemsUpdateErr, discountUpdateErr error
 
 	// Update cart status to "Ordered"
 	go func() {
@@ -83,8 +83,25 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 			Update("status", structures.CartItemOrdered).Error
 	}()
 
-	// Wait for both updates to complete
+	// Update the discounts table.
+	go func() {
+		defer wg.Done()
+		discountUpdateErr = s.Db.Model(&structures.Discount{}).
+			Where("cart_id = ?", req.CartID).
+			Updates(map[string]interface{}{
+				"user_id":         userId,
+				"total_cost":      req.TotalAmount,
+				"order_id":        orderID,
+				"discount_amount": req.Discount, // Assuming req.DiscountAmount exists
+			}).Error
+	}()
 	wg.Wait()
+
+	if discountUpdateErr != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to update discount",
+		})
+	}
 
 	// Check if any errors occurred
 	if cartUpdateErr != nil || cartItemsUpdateErr != nil {

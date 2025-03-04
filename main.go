@@ -198,6 +198,7 @@ func main() {
 	app.Post("/getItemAudio", ExtractJWT, svr.GetItemAudio)
 	app.Post("/placeOrder", ExtractJWT, svr.PlaceOrder)
 	app.Post("/fetchOrderDetails", ExtractJWT, svr.FetchOrderDetails)
+	app.Post("/invalidateSession", ExtractJWT, svr.InvalidateSession)
 
 	fmt.Println("Routing established!!")
 
