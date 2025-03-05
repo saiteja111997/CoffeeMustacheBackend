@@ -20,9 +20,16 @@ func (s *Server) GetCuratedCart(c *fiber.Ctx) error {
 		})
 	}
 
-	// Get the current date and time
-	currentDate := time.Now().Format("2006-01-02")
-	currentHour := time.Now().Hour()
+	// Get the current date and time in IST
+	location, err := time.LoadLocation("Asia/Kolkata")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to load location",
+		})
+	}
+	currentTime := time.Now().In(location)
+	currentDate := currentTime.Format("2006-01-02")
+	currentHour := currentTime.Hour()
 
 	// Determine time of day
 	var timeOfDay structures.TimeOfDay
