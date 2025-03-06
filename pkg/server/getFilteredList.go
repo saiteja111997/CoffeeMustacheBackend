@@ -19,8 +19,8 @@ func (s *Server) GetFilteredList(c *fiber.Ctx) error {
 		})
 	}
 
-	// Tags : “price 200-400”, “bestrated”, “trending”, “bestsellers” check if the tag is valid
-	if req.Tag != "price 200-400" && req.Tag != "bestrated" && req.Tag != "trending" && req.Tag != "bestsellers" {
+	// Tags : “price 200-400”, “bestrated”, “trending”, “bestsellers”, "toppicks" check if the tag is valid
+	if req.Tag != "price 200-400" && req.Tag != "bestrated" && req.Tag != "trending" && req.Tag != "bestseller" && req.Tag != "toppicks" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid tag",
 		})

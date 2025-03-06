@@ -1,5 +1,7 @@
 package structures
 
+import "time"
+
 // Request payload for demonstration
 type FetchOrderDetailsRequest struct {
 	SessionID string `json:"session_id"`
@@ -37,6 +39,8 @@ type OrderResponse struct {
 	OrderID     string           `json:"order_id"`
 	CartID      string           `json:"cart_id"`
 	CartItems   []CartItemDetail `json:"cart_items"`
+	Discount    float64          `json:"discount"`
+	OrderedAt   time.Time        `json:"ordered_at"`
 	TotalAmount float64          `json:"total_amount"`
 }
 
@@ -59,5 +63,6 @@ type PlaceOrderResponse struct {
 type FinalResponse struct {
 	UserID               uint            `json:"user_id"`
 	CumilativeOrderTotal float64         `json:"cumilative_order_total"`
+	Discount             float64         `json:"discount"`
 	Orders               []OrderResponse `json:"orders"`
 }

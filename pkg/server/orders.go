@@ -83,17 +83,17 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 			Update("status", structures.CartItemOrdered).Error
 	}()
 
-	// Update the discounts table.
+	// Insert into the discounts table.
 	go func() {
 		defer wg.Done()
-		discountUpdateErr = s.Db.Model(&structures.Discount{}).
-			Where("cart_id = ?", req.CartID).
-			Updates(map[string]interface{}{
-				"user_id":         userId,
-				"total_cost":      req.TotalAmount,
-				"order_id":        orderID,
-				"discount_amount": req.Discount, // Assuming req.DiscountAmount exists
-			}).Error
+		discount := structures.Discount{
+			UserId:        userId,
+			CafeID:        1,            // Assuming req.CafeID exists
+			DiscountValue: req.Discount, // Assuming req.DiscountValue exists
+			TotalCost:     req.TotalAmount,
+			OrderId:       orderID,
+		}
+		discountUpdateErr = s.Db.Create(&discount).Error
 	}()
 	wg.Wait()
 
@@ -247,11 +247,20 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 				})
 			}
 
+			// Fetch discount from the order id
+			var discount structures.Discount
+			if err := s.Db.Where("order_id = ?", order.OrderID).First(&discount).Error; err != nil {
+				fmt.Println("Failed to fetch discount:", err)
+				return
+			}
+
 			// Build an OrderResponse
 			response := structures.OrderResponse{
 				OrderID:     order.OrderID,
 				CartID:      order.CartID,
 				CartItems:   cartItemDetails,
+				OrderedAt:   order.OrderTime,
+				Discount:    discount.DiscountValue,
 				TotalAmount: order.TotalAmount,
 			}
 
@@ -269,7 +278,8 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 	// e.g. you might want an array of objects:
 	// [{ user_name: 'Alice', orders: [...] }, ...]
 
-	var finalResponse = make(map[string]structures.FinalResponse)
+	var finalResponse = make(map[string]interface{})
+	var finalTimeStamp time.Time
 
 	for userID, userOrders := range results {
 		if len(userOrders) == 0 {
@@ -284,17 +294,26 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 		}
 
 		var totalAmount float64
+		var totalDiscount float64
 
 		for _, userOrder := range userOrders {
+			// calculate the latest timestamp
+			if userOrder.OrderedAt.After(finalTimeStamp) {
+				finalTimeStamp = userOrder.OrderedAt
+			}
 			totalAmount += userOrder.TotalAmount
+			totalDiscount += userOrder.Discount
 		}
 
 		finalResponse[user.Name] = structures.FinalResponse{
 			UserID:               userID,
 			CumilativeOrderTotal: totalAmount,
+			Discount:             totalDiscount,
 			Orders:               userOrders,
 		}
 	}
+
+	finalResponse["timestamp"] = finalTimeStamp
 
 	// 6) Return JSON
 	return c.Status(http.StatusOK).JSON(finalResponse)
