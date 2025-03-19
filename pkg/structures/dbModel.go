@@ -203,6 +203,7 @@ type MenuItem struct {
 	DiscountSection  string       `gorm:"type:varchar(255)" json:"discount_section"`
 	PopularityScore  float64      `gorm:"default:0.0" json:"popularity_score"`
 	ImageURL         string       `gorm:"type:varchar(255)" json:"image_url"`
+	VideoUrl         string       `gorm:"type:varchar(255)" json:"video_url"`
 	AvailableFrom    string       `gorm:"type:varchar(255)" json:"available_from"`
 	AvailableTill    string       `gorm:"type:varchar(255)" json:"available_till"`
 	AvailableAllDay  bool         `gorm:"default:true" json:"available_all_day"`

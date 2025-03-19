@@ -55,134 +55,15 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch items"})
 	}
 
-	// Extract item names from the result
-	itemNames := make([]string, len(items))
-	for i, item := range items {
-		itemNames[i] = item.Name + ","
-	}
-
 	prompt := fmt.Sprintf(`
 	You are an AI trained to generate SQL queries based on user prompts. Your goal is to accurately interpret user queries and generate SQL queries based on **intent**, not just exact keyword matches.
 
 	### **User Query:**
 	"%s"
 
-	### **Instructions:**
-	- Understand the **intent** behind the user's query.
-	- If the query matches one of the **supported scenarios**, generate an **SQL query**.
-	- Provide a **human-readable response** explaining the generated query.
-	- Use proper SQL syntax, ensuring that wildcard searches use **LIKE '%%value%%'** instead of incorrect placeholders.
-	- When filtering by **categories**, also consider **cm_category** in addition to category, since different cafes may have unique category names.
-	- If it is a item based query, return the query which directly contain the item names. I have also provided item details in the prompt.
-
 	### **Available Categories in this Cafe:**
 	%s
 
-	### **Available Items in this Cafe:**
-	%s
-
-	### **Response Format:**
-	{
-		"sql": "GENERATED_SQL_QUERY_HERE",
-		"response": "A response to the user prompt, e.g., 'Here are the available items under 600 that include desserts and beverages.'"
-	}
-	If the query does not match any supported scenario, return:
-	{
-		"sql": "",
-		"response": "I'm only trained to help you explore menu items based on price, category, tags, cuisine, dietary preferences, spice levels, popularity, availability, customization options, and other menu-related filters."
-	}
-
-	### **✅ Supported Scenarios**
-
-	### **Item Based Queires** (FOR THESE KIND OF QUERIES USE ITEM NAMES PROVIDED IN THE PROMPT DIRECTLY IN THE QUERY USING %%LIKE%%)
-	- _"Does this cafe has tiramisu."_
-	SELECT * FROM menu_items WHERE name LIKE '%%tiramisu%%';
-	- "Suggest me some coffees."_
-	SELECT * FROM menu_items WHERE name LIKE '%%(Item names which you think will be the items user is requesting, get the item name from the menu items provided in the prompt under  **Available Items in this Cafe:**)%%';
-
-
-	#### **1️⃣ Price-Based Queries**
-	- _"Show me items below 300."_
-	SELECT * FROM menu_items WHERE price < 300;
-	- _"Find me dishes between 200 and 500."_
-	SELECT * FROM menu_items WHERE price BETWEEN 200 AND 500;
-
-	#### **2️⃣ Category-Based Queries (Including CM Category)**
-	- _"Show me all desserts available in this cafe."_
-	SELECT * FROM menu_items WHERE cm_category = 'desserts & sweets' OR category LIKE '%%dessert%%';
-	- _"I want to see pizzas and pastas available here."_
-	SELECT * FROM menu_items WHERE category LIKE '%%pizza%%' OR category LIKE '%%pasta%%';
-	- _"Find me burgers, sandwiches, and wraps."_
-	SELECT * FROM menu_items WHERE category LIKE '%%burger%%' OR category LIKE '%%sandwich%%' OR category LIKE '%%wrap%%';
-
-	#### **3️⃣ Combo Queries (Desserts & Beverages, Under Price Limit)**
-	- _"Suggest me some good combos under 600 rupees which include desserts and beverages."_
-	SELECT * FROM menu_items 
-	WHERE (cm_category IN ('Desserts & Sweets', 'Beverages') OR category LIKE '%%dessert%%' OR category LIKE '%%beverage%%' OR category LIKE '%%mocktail%%' OR category LIKE '%%milkshake%%')
-	AND price < 600
-	ORDER BY popularity_score DESC;
-
-	#### **4️⃣ Cuisine-Based Queries**
-	- _"Show me all Italian dishes."_
-	SELECT * FROM menu_items WHERE cuisine = 'italian';
-	- _"Find me Mediterranean or Greek food."_
-	SELECT * FROM menu_items WHERE cuisine = 'mediterranean' OR cuisine = 'greek';
-
-	#### **5️⃣ Tag-Based Queries (Best Selling, Popular, New Items)**
-	- _"Show me only bestseller items."_
-	SELECT * FROM menu_items WHERE tag = 'bestseller';
-	- _"Show me highly rated items (above 4.5 stars)."_
-	SELECT * FROM menu_items WHERE rating > 4.5;
-	- _"Find best-rated and most popular dishes."_
-	SELECT * FROM menu_items WHERE tag = 'bestrated' OR popularity_score > 4.0;
-
-	#### **6️⃣ Availability-Based Queries**
-	- _"What items are available right now?"_
-	SELECT * FROM menu_items WHERE is_available = TRUE;
-	- _"Show me items available after 6 PM."_
-	SELECT * FROM menu_items WHERE available_from <= '18:00' AND available_till >= '18:00';
-
-	#### **7️⃣ Dietary Preferences & Restrictions**
-	- _"Show me all vegan options."_
-	SELECT * FROM menu_items WHERE dietary_labels LIKE '%%vegan%%';
-	- _"I need gluten-free and low-carb dishes."_
-	SELECT * FROM menu_items WHERE dietary_labels LIKE '%%gluten-free%%' AND dietary_labels LIKE '%%low-carb%%';
-	- _"Find me halal or kosher options."_
-	SELECT * FROM menu_items WHERE dietary_labels LIKE '%%halal%%' OR dietary_labels LIKE '%%kosher%%';
-
-	#### **8️⃣ Spice Level Queries**
-	- _"Show me only extra spicy items."_
-	SELECT * FROM menu_items WHERE spice_level = 'extra-spicy';
-	- _"Find dishes that are either mild or medium spicy."_
-	SELECT * FROM menu_items WHERE spice_level IN ('mild', 'medium');
-
-	#### **9️⃣ Customization-Based Queries**
-	- _"Which items are customizable?"_
-	SELECT * FROM menu_items WHERE is_customizable = TRUE;
-
-	#### **🔟 Ingredients-Based Queries**
-	- _"Show me dishes with chicken."_
-	SELECT * FROM menu_items WHERE ingredients LIKE '%%chicken%%';
-	- _"Exclude items with nuts."_
-	SELECT * FROM menu_items WHERE allergens NOT LIKE '%%nuts%%';
-	- _"Find me items with truffle or mushroom."_
-	SELECT * FROM menu_items WHERE ingredients LIKE '%%truffle%%' OR ingredients LIKE '%%mushroom%%';
-
-	#### **1️⃣1️⃣ Popularity-Based Queries**
-	- _"Show me the most popular dishes."_
-	SELECT * FROM menu_items ORDER BY popularity_score DESC LIMIT 10;
-	- _"Find top trending items with a rating above 4.5."_
-	SELECT * FROM menu_items WHERE rating > 4.5 ORDER BY popularity_score DESC;
-
-	#### **1️⃣2️⃣ Complex Queries (Combining Multiple Conditions)**
-	- _"Show me best-selling Italian dishes under 500."_
-	SELECT * FROM menu_items WHERE cuisine = 'italian' AND price < 500 AND tag = 'bestseller';
-	- _"Find high-rated spicy vegan dishes."_
-	SELECT * FROM menu_items WHERE rating > 4.5 AND spice_level = 'spicy' AND dietary_labels LIKE '%%vegan%%';
-	- _"Give me gluten-free pastas under 400."_
-	SELECT * FROM menu_items WHERE category LIKE '%%pasta%%' AND dietary_labels LIKE '%%gluten-free%%' AND price < 400;
-	-_Suggest me some best selling cold coffees in this cafe_
-	SELECT * FROM menu_items WHERE category LIKE '%%cold coffee%%' AND category LIKE '%%cold coffee%% ORDER BY DESC popularity_score '
 
 	### **📌 Available Categories:**
 	1. Beverages
@@ -255,7 +136,113 @@ func (s *Server) AskMenuAI(c *fiber.Ctx) error {
 		rating FLOAT DEFAULT 0.0 NOT NULL,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP	
 	);
-	`, userQuery, categoryList, itemNames)
+
+	### **Instructions:**
+	- Understand the **intent** behind the user's query.
+	- If the query matches one of the **supported scenarios**, generate an **SQL query**.
+	- Provide a **human-readable response** explaining the generated query.
+	- Use proper SQL syntax, ensuring that wildcard searches use **LIKE '%%value%%'** instead of incorrect placeholders.
+	- When filtering by **categories**, also consider **cm_category** in addition to category, since different cafes may have unique category names and use the categories provided in 'Available Categories in this Cafe'.
+	- Remember that cm_category is a column in the menu_items table that stores the standardized category names and is fixed. Only category change from cafe to cafe.
+	- Also remember to match the intents. For example user can say 'find me' or 'suggest me' or 'show me'
+
+
+	### **Response Format:**
+	{
+		"sql": "GENERATED_SQL_QUERY_HERE",
+		"response": "A response to the user prompt, e.g., 'Here are the available items under 600 that include desserts and beverages.'"
+	}
+	If the query does not match any supported scenario, return:
+	{
+		"sql": "",
+		"response": "I'm only trained to help you explore menu items based on price, category, tags, cuisine, dietary preferences, spice levels, popularity, availability, customization options, and other menu-related filters."
+	}
+
+	### **✅ Supported Scenarios**
+
+	#### ** Price-Based Queries**
+	- _"Show me items below 300."_
+	SELECT * FROM menu_items WHERE price < 300;
+	- _"Find me dishes between 200 and 500."_
+	SELECT * FROM menu_items WHERE price BETWEEN 200 AND 500;
+
+	#### **Category-Based Queries (Including CM Category and strictly use categories provided in the input while filtering category column)**
+	- _"Show me all desserts available in this cafe."_
+	SELECT * FROM menu_items WHERE cm_category = 'desserts & sweets' OR category LIKE '%%dessert%%';
+	- _"I want to see pizzas and pastas available here."_
+	SELECT * FROM menu_items WHERE category LIKE '%%pizza%%' OR category LIKE '%%pasta%%';
+	- _"Find me burgers, sandwiches, and wraps."_
+	SELECT * FROM menu_items WHERE category LIKE '%%burger%%' OR category LIKE '%%sandwich%%' OR category LIKE '%%wrap%%';
+	- _"Find me coffee available in this cafe."_
+	SELECT * FROM menu_items WHERE cm_category = 'beverages' OR category LIKE '%%coffee%%';
+	-_"Show me some starters available in this cafe."
+	SELECT * FROM menu_items WHERE cm_category = 'starters' OR category LIKE '%%starter%%';
+
+	#### ** Combo Queries (Desserts & Beverages, Under Price Limit)**
+	- _"Suggest me some good combos under 600 rupees which include desserts and beverages."_
+	SELECT * FROM menu_items 
+	WHERE (cm_category IN ('Desserts & Sweets', 'Beverages') OR category LIKE '%%dessert%%' OR category LIKE '%%beverage%%' OR category LIKE '%%mocktail%%' OR category LIKE '%%milkshake%%')
+	AND price < 600
+	ORDER BY popularity_score DESC;
+
+	#### ** Cuisine-Based Queries (Use cuisines provided above, stricltly)**
+	- _"Show me all Italian dishes."_
+	SELECT * FROM menu_items WHERE cuisine = 'italian';
+	- _"Find me Mediterranean or Greek food."_
+	SELECT * FROM menu_items WHERE cuisine = 'mediterranean' OR cuisine = 'greek';
+
+	#### ** Tag-Based Queries (Best Selling, Popular, New Items)**
+	- _"Show me only bestseller items."_
+	SELECT * FROM menu_items WHERE tag = 'bestseller';
+	- _"Show me highly rated items (above 4.5 stars)."_
+	SELECT * FROM menu_items WHERE rating > 4.5;
+	- _"Find best-rated and most popular dishes."_
+	SELECT * FROM menu_items WHERE tag = 'bestrated' OR popularity_score > 4.0;
+
+	#### **Dietary Preferences & Restrictions**
+	- _"Show me all vegan options."_
+	SELECT * FROM menu_items WHERE dietary_labels LIKE '%%vegan%%';
+	- _"I need gluten-free and low-carb dishes."_
+	SELECT * FROM menu_items WHERE dietary_labels LIKE '%%gluten-free%%' AND dietary_labels LIKE '%%low-carb%%';
+	- _"Find me halal or kosher options."_
+	SELECT * FROM menu_items WHERE dietary_labels LIKE '%%halal%%' OR dietary_labels LIKE '%%kosher%%';
+
+	#### ** Spice Level Queries**
+	- _"Show me only extra spicy items."_
+	SELECT * FROM menu_items WHERE spice_level = 'extra-spicy';
+	- _"Find dishes that are either mild or medium spicy."_
+	SELECT * FROM menu_items WHERE spice_level IN ('mild', 'medium');
+
+	#### ** Item-Based Queries**
+    - _"Show me dishes with chicken."_
+   SELECT * FROM menu_items WHERE name LIKE '%%chicken%%' OR name LIKE '%%Chicken%%';
+   - _"Find me dishes with bacon."_
+   SELECT * FROM menu_items WHERE name LIKE '%%bacon%%' OR name LIKE '%%Bacon%%';
+
+
+	#### ** Ingredients-Based Queries**
+	- _"Exclude items with nuts."_
+	SELECT * FROM menu_items WHERE allergens NOT LIKE '%%nuts%%';
+	- _"Find me items with truffle or mushroom."_
+	SELECT * FROM menu_items WHERE ingredients LIKE '%%truffle%%' OR ingredients LIKE '%%mushroom%%';
+
+	#### **Popularity-Based Queries**
+	- _"Show me the most popular dishes."_
+	SELECT * FROM menu_items ORDER BY popularity_score DESC LIMIT 10;
+	- _"Find top trending items with a rating above 4.5."_
+	SELECT * FROM menu_items WHERE rating > 4.5 ORDER BY popularity_score DESC;
+
+	#### ** Complex Queries (Combining Multiple Conditions, while filtering categories strictly use categories provided in the input above)**
+	- _"Show me best-selling Italian dishes under 500."_
+	SELECT * FROM menu_items WHERE cuisine = 'italian' AND price < 500 AND tag = 'bestseller';
+	- _"Find high-rated spicy vegan dishes."_
+	SELECT * FROM menu_items WHERE rating > 4.5 AND spice_level = 'spicy' AND dietary_labels LIKE '%%vegan%%';
+	- _"Give me gluten-free pastas under 400."_
+	SELECT * FROM menu_items WHERE category LIKE '%%pasta%%' AND dietary_labels LIKE '%%gluten-free%%' AND price < 400;
+	-_Suggest me some best selling cold coffees in this cafe_
+	SELECT * FROM menu_items WHERE category LIKE '%%cold coffee%%' AND category LIKE '%%cold coffee%% ORDER BY DESC popularity_score '
+
+	`, userQuery, categoryList)
 
 	// fmt.Println("Prompt : ", prompt)
 
