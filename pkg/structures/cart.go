@@ -5,6 +5,7 @@ import "gorm.io/datatypes"
 // Define request structure for multiple cart items
 type AddToCartRequest struct {
 	CartID         string            `json:"cart_id"`
+	CafeID         uint              `json:"cafe_id" validate:"required"`
 	SessionID      string            `json:"session_id" validate:"required"`
 	TotalAmount    float64           `json:"total_amount" validate:"required"`
 	DiscountAmount float64           `json:"discount_amount" validate:"required"`

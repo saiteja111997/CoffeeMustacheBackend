@@ -44,6 +44,7 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 	// Create a new order instance
 	order := structures.Order{
 		OrderID:       orderID,
+		CafeId:        req.CafeID,
 		CartID:        req.CartID,
 		SessionID:     req.SessionID,
 		UserID:        userId,
@@ -88,7 +89,7 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 		defer wg.Done()
 		discount := structures.Discount{
 			UserId:        userId,
-			CafeID:        1,            // Assuming req.CafeID exists
+			CafeID:        req.CafeID,   // Assuming req.CafeID exists
 			DiscountValue: req.Discount, // Assuming req.DiscountValue exists
 			TotalCost:     req.TotalAmount,
 			OrderId:       orderID,

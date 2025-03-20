@@ -289,6 +289,7 @@ type Cart struct {
 	CartID         string     `gorm:"type:varchar(100);primaryKey" json:"cart_id"`
 	SessionID      string     `gorm:"type:varchar(100);not null" json:"session_id"`
 	UserID         uint       `gorm:"not null" json:"user_id"`
+	CafeId         uint       `gorm:"not null" json:"cafe_id"`
 	CartStatus     CartStatus `gorm:"type:varchar(50);not null" json:"cart_status"`
 	TotalAmount    float64    `gorm:"type:decimal(10,2)" json:"total_amount"`
 	DiscountAmount float64    `gorm:"type:decimal(10,2)" json:"discount_amount"`
@@ -317,6 +318,7 @@ type CartItem struct {
 type Order struct {
 	OrderID       string        `gorm:"type:varchar(100);primaryKey" json:"order_id"`
 	CartID        string        `gorm:"type:varchar(100);not null" json:"cart_id"`
+	CafeId        uint          `gorm:"not null" json:"cafe_id"`
 	SessionID     string        `gorm:"type:varchar(100);not null" json:"session_id"`
 	UserID        uint          `gorm:"not null" json:"user_id"`
 	OrderStatus   OrderStatus   `gorm:"type:varchar(50);not null" json:"order_status"`
@@ -343,13 +345,14 @@ type UpdateCartResult struct {
 }
 
 type Discount struct {
-	ID            uint    `gorm:"primaryKey;autoIncrement" json:"id"`
-	CafeID        uint    `gorm:"not null" json:"cafe_id"`
-	DiscountType  string  `gorm:"type:varchar(50)" json:"discount_type"`
-	DiscountValue float64 `gorm:"type:decimal(5,2)" json:"discount_value"`
-	TotalCost     float64 `gorm:"type:decimal(10,2)" json:"total_cost"`
-	OrderId       string  `gorm:"type:varchar(100)" json:"order_id"`
-	UserId        uint    `gorm:"not null" json:"user_id"`
+	ID            uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	CafeID        uint      `gorm:"not null" json:"cafe_id"`
+	DiscountType  string    `gorm:"type:varchar(50)" json:"discount_type"`
+	DiscountValue float64   `gorm:"type:decimal(5,2)" json:"discount_value"`
+	TotalCost     float64   `gorm:"type:decimal(10,2)" json:"total_cost"`
+	OrderId       string    `gorm:"type:varchar(100)" json:"order_id"`
+	UserId        uint      `gorm:"not null" json:"user_id"`
+	CreatedAt     time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
 
 type MenuAIRecords struct {
