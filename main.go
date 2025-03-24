@@ -156,7 +156,7 @@ func main() {
 	}
 
 	db = db.Debug()
-	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.CuratedCart{}, &structures.CuratedCartItem{}, &structures.Session{}, &structures.UserSession{}, &structures.Cart{}, &structures.CartItem{}, &structures.Order{}, &structures.Order{}, &structures.UpdateCartResult{}, &structures.MenuAIRecords{}, &structures.Discount{})
+	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.CuratedCart{}, &structures.CuratedCartItem{}, &structures.Session{}, &structures.UserSession{}, &structures.Cart{}, &structures.CartItem{}, &structures.Order{}, &structures.Order{}, &structures.UpdateCartResult{}, &structures.MenuAIRecords{}, &structures.Discount{}, &structures.Cafe{}, &structures.ItemFeedback{}, &structures.CafeFeedback{})
 	fmt.Println("Auto migration done!!")
 
 	defer db.Close()
@@ -199,6 +199,8 @@ func main() {
 	app.Post("/placeOrder", ExtractJWT, svr.PlaceOrder)
 	app.Post("/fetchOrderDetails", ExtractJWT, svr.FetchOrderDetails)
 	app.Post("/invalidateSession", ExtractJWT, svr.InvalidateSession)
+	app.Post("/getFeedbackForm", ExtractJWT, svr.GetFeedbackForm)
+	app.Post("/submitFeedback", ExtractJWT, svr.SubmitFeedback)
 
 	fmt.Println("Routing established!!")
 

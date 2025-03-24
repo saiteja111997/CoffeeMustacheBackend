@@ -192,6 +192,22 @@ functions:
           method: POST
           cors: true
 
+  GetFeedbackForm:
+    handler: bootstrap
+    events:
+      - http:
+          path: /getFeedbackForm
+          method: POST
+          cors: true
+
+  SubmitFeedback:
+    handler: bootstrap
+    events:
+      - http:
+          path: /submitFeedback
+          method: POST
+          cors: true
+
   
 
   

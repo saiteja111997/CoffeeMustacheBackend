@@ -211,6 +211,7 @@ type MenuItem struct {
 	Tag              string       `gorm:"type:varchar(255)" json:"tag"`
 	AudioURL         string       `gorm:"type:varchar(255)" json:"audio_url"`
 	Rating           float64      `gorm:"default:0.0;not null" json:"rating"`
+	TotalRatings     int          `gorm:"default:0;not null" json:"total_ratings"`
 	CreatedAt        time.Time    `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt        time.Time    `gorm:"autoUpdateTime" json:"updated_at"`
 }
@@ -364,4 +365,47 @@ type MenuAIRecords struct {
 	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
 	Prompt       string    `gorm:"type:text" json:"prompt"`
 	UserResponse bool      `gorm:"default:false" json:"user_response"`
+}
+
+type ItemFeedback struct {
+	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID    uint      `gorm:"not null" json:"user_id"` // User who gave feedback
+	ItemID    uint      `gorm:"not null" json:"item_id"` // Item being rated
+	Rating    int       `gorm:"not null" json:"rating"`  // Rating (1-5)
+	SessionID string    `gorm:"not null" json:"session_id"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+}
+
+type CafeFeedback struct {
+	ID          uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID      uint      `gorm:"not null" json:"user_id"`      // User who gave feedback
+	CafeID      uint      `gorm:"not null" json:"cafe_id"`      // Cafe being rated
+	Rating      int       `gorm:"not null" json:"rating"`       // Cafe rating (1-5)
+	WouldReturn int       `gorm:"not null" json:"would_return"` // Would the user return? (0->No, 1->Yes, 2->No input)
+	Review      string    `gorm:"type:text" json:"review"`      // Optional text review
+	SessionID   string    `gorm:"not null" json:"session_id"`
+	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
+}
+
+type Cafe struct {
+	ID           uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	CafeCode     string    `gorm:"type:varchar(255)" json:"cafe_code"`
+	Name         string    `gorm:"type:varchar(100);not null" json:"name"`
+	Address      string    `gorm:"type:varchar(255)" json:"address"`
+	City         string    `gorm:"type:varchar(100)" json:"city"`
+	State        string    `gorm:"type:varchar(100)" json:"state"`
+	Country      string    `gorm:"type:varchar(100)" json:"country"`
+	ZipCode      string    `gorm:"type:varchar(20)" json:"zip_code"`
+	Phone        string    `gorm:"type:varchar(20)" json:"phone"`
+	Email        string    `gorm:"type:varchar(100)" json:"email"`
+	OpeningTime  time.Time `gorm:"type:time" json:"opening_time"`
+	ClosingTime  time.Time `gorm:"type:time" json:"closing_time"`
+	Rating       float64   `gorm:"default:0.0" json:"rating"`
+	TotalRatings uint      `gorm:"default:0" json:"total_ratings"`
+	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+func (Cafe) TableName() string {
+	return "cafes"
 }
