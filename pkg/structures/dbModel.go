@@ -180,40 +180,41 @@ type Preference struct {
 }
 
 type MenuItem struct {
-	ID               uint         `gorm:"primaryKey;autoIncrement" json:"id"`
-	CafeID           uint         `gorm:"not null" json:"cafe_id"`
-	Category         string       `gorm:"type:varchar(50);not null" json:"category"`
-	SubCategory      string       `gorm:"type:varchar(50)" json:"sub_category"`
-	Name             string       `gorm:"type:varchar(100);not null" json:"name"`
-	Description      string       `gorm:"type:text" json:"description"`
-	ShortDescription string       `gorm:"type:varchar(255)" json:"short_description"`
-	Price            float64      `gorm:"type:decimal(10,2);not null" json:"price"`
-	IsCustomizable   bool         `gorm:"default:false" json:"is_customizable"`
-	FoodType         string       `gorm:"type:varchar(10);not null" json:"food_type"`
-	Cuisine          Cuisine      `gorm:"type:varchar(50)" json:"cuisine"`        // Cuisine as enum
-	DietaryLabels    DietaryLabel `gorm:"type:varchar(50)" json:"dietary_labels"` // Dietary label as enum
-	SpiceLevel       SpiceLevel   `gorm:"type:varchar(20)" json:"spice_level"`    // Spice level as enum
-	CMCategory       CMCategory   `gorm:"type:varchar(50)" json:"cm_category"`    // CM Category as enum
-	Ingredients      string       `gorm:"type:text" json:"ingredients"`
-	Allergens        string       `gorm:"type:varchar(255)" json:"allergens"`
-	ServingSize      string       `gorm:"type:varchar(50)" json:"serving_size"`
-	Calories         int          `gorm:"type:int" json:"calories"`
-	PreparationTime  int          `gorm:"type:int" json:"preparation_time"`
-	Discount         float64      `gorm:"type: decimal(5,2); default:0.0" json:"discount"`
-	DiscountSection  string       `gorm:"type:varchar(255)" json:"discount_section"`
-	PopularityScore  float64      `gorm:"default:0.0" json:"popularity_score"`
-	ImageURL         string       `gorm:"type:varchar(255)" json:"image_url"`
-	VideoUrl         string       `gorm:"type:varchar(255)" json:"video_url"`
-	AvailableFrom    string       `gorm:"type:varchar(255)" json:"available_from"`
-	AvailableTill    string       `gorm:"type:varchar(255)" json:"available_till"`
-	AvailableAllDay  bool         `gorm:"default:true" json:"available_all_day"`
-	IsAvailable      bool         `gorm:"default:true" json:"is_available"`
-	Tag              string       `gorm:"type:varchar(255)" json:"tag"`
-	AudioURL         string       `gorm:"type:varchar(255)" json:"audio_url"`
-	Rating           float64      `gorm:"default:0.0;not null" json:"rating"`
-	TotalRatings     int          `gorm:"default:0;not null" json:"total_ratings"`
-	CreatedAt        time.Time    `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt        time.Time    `gorm:"autoUpdateTime" json:"updated_at"`
+	ID               uint           `gorm:"primaryKey;autoIncrement" json:"id"`
+	CafeID           uint           `gorm:"not null" json:"cafe_id"`
+	Category         string         `gorm:"type:varchar(50);not null" json:"category"`
+	SubCategory      string         `gorm:"type:varchar(50)" json:"sub_category"`
+	Name             string         `gorm:"type:varchar(100);not null" json:"name"`
+	Description      string         `gorm:"type:text" json:"description"`
+	ShortDescription string         `gorm:"type:varchar(255)" json:"short_description"`
+	Price            float64        `gorm:"type:decimal(10,2);not null" json:"price"`
+	IsCustomizable   string         `gorm:"type:varchar(255)" json:"is_customizable"`
+	FoodType         string         `gorm:"type:varchar(10);not null" json:"food_type"`
+	Cuisine          Cuisine        `gorm:"type:varchar(50)" json:"cuisine"`        // Cuisine as enum
+	DietaryLabels    DietaryLabel   `gorm:"type:varchar(50)" json:"dietary_labels"` // Dietary label as enum
+	SpiceLevel       SpiceLevel     `gorm:"type:varchar(20)" json:"spice_level"`    // Spice level as enum
+	CMCategory       CMCategory     `gorm:"type:varchar(50)" json:"cm_category"`    // CM Category as enum
+	Ingredients      string         `gorm:"type:text" json:"ingredients"`
+	Allergens        datatypes.JSON `gorm:"type:jsonb" json:"allergens"`
+	ServingSize      string         `gorm:"type:varchar(50)" json:"serving_size"`
+	Calories         int            `gorm:"type:int" json:"calories"`
+	PreparationTime  int            `gorm:"type:int" json:"preparation_time"`
+	Discount         float64        `gorm:"type: decimal(5,2); default:0.0" json:"discount"`
+	DiscountSection  string         `gorm:"type:varchar(255)" json:"discount_section"`
+	PopularityScore  float64        `gorm:"default:0.0" json:"popularity_score"`
+	ImageURL         string         `gorm:"type:varchar(255)" json:"image_url"`
+	VideoUrl         string         `gorm:"type:varchar(255)" json:"video_url"`
+	AvailableFrom    string         `gorm:"type:varchar(255)" json:"available_from"`
+	AvailableTill    string         `gorm:"type:varchar(255)" json:"available_till"`
+	AvailableAllDay  string         `gorm:"type:varchar(255)" json:"available_all_day"`
+	IsAvailable      string         `gorm:"type:varchar(255)" json:"is_available"`
+	KitchenArea      string         `gorm:"type:varchar(255)" json:"kitchen_area"`
+	Tag              datatypes.JSON `gorm:"type:jsonb" json:"tag"`
+	AudioURL         string         `gorm:"type:varchar(255)" json:"audio_url"`
+	Rating           float64        `gorm:"default:0.0;not null" json:"rating"`
+	TotalRatings     int            `gorm:"default:0;not null" json:"total_ratings"`
+	CreatedAt        time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt        time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 type ItemCustomization struct {
