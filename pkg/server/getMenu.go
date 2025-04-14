@@ -63,11 +63,9 @@ func (s *Server) GetMenu(c *fiber.Ctx) error {
 		if _, ok := groupedMenu[item.Category]; !ok {
 			groupedMenu[item.Category] = make(map[string][]structures.MenuItem)
 		}
-		if item.SubCategory == "" {
-			groupedMenu[item.Category]["None"] = append(groupedMenu[item.Category]["None"], item)
-		} else {
-			groupedMenu[item.Category][item.SubCategory] = append(groupedMenu[item.Category][item.SubCategory], item)
-		}
+
+		groupedMenu[item.Category]["None"] = append(groupedMenu[item.Category]["None"], item)
+
 	}
 
 	return c.JSON(groupedMenu)

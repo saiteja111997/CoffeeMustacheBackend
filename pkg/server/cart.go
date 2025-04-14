@@ -172,7 +172,7 @@ func (s *Server) GetCart(c *fiber.Ctx) error {
 
 	// Fetch cart items
 	var cartItems []structures.CartItem
-	if err := s.Db.Where("cart_id = ? AND status != ?", req.CartID, structures.CartItemCanceled).Find(&cartItems).Error; err != nil {
+	if err := s.Db.Where("cart_id = ? AND status != ?", req.CartID, "Canceled").Find(&cartItems).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch cart items",
 		})
@@ -360,7 +360,7 @@ func (s *Server) UpdateQuantity(c *fiber.Ctx) error {
 		})
 	}
 
-	if cartItem.Status == structures.CartItemCanceled {
+	if cartItem.Status == "Canceled" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Cannot update quantity of a canceled item",
 		})
@@ -368,10 +368,13 @@ func (s *Server) UpdateQuantity(c *fiber.Ctx) error {
 
 	// If quantity is zero, mark item as "Canceled"
 	if req.Quantity == 0 {
+		fmt.Println("Quantity is Zero, marking item as Canceled")
+
+		fmt.Println("Printing Status before updating : ", string(structures.CartItemCanceled))
 		if err := s.Db.Model(&structures.CartItem{}).
 			Where("cart_item_id = ?", req.CartItemId).
 			Updates(map[string]interface{}{
-				"status":     structures.CartItemCanceled,
+				"status":     "Canceled",
 				"updated_at": time.Now(),
 				"quantity":   0,
 			}).Error; err != nil {

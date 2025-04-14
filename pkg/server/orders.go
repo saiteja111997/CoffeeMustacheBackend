@@ -16,8 +16,11 @@ import (
 func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 	var req structures.PlaceOrderRequest
 
+	fmt.Println("Placing Order ...")
+
 	// Parse request body
 	if err := c.BodyParser(&req); err != nil {
+		fmt.Println("Error parsing request body:", err)
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
 		})
@@ -25,14 +28,18 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 
 	// Validate required fields
 	if req.CartID == "" || req.SessionID == "" || req.TotalAmount <= 0 {
+		fmt.Println("Missing required fields")
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": "cart_id, session_id, and total_amount are required",
 		})
 	}
 
+	fmt.Println("Printing Cart Id and Session Id", req.CartID, req.SessionID)
+
 	// Get user ID from locals
 	userId := uint(c.Locals("userId").(float64))
 	if userId == 0 {
+		fmt.Println("User not authenticated")
 		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 			"error": "User not authenticated",
 		})
@@ -40,8 +47,17 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 
 	// Generate a new Order ID using ksuid
 	orderID := ksuid.New().String()
+	fmt.Println("Printing Order ID", orderID)
 
 	// Create a new order instance
+	location, err := time.LoadLocation("Asia/Kolkata")
+	if err != nil {
+		fmt.Println("Failed to load location:", err)
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to process order time",
+		})
+	}
+
 	order := structures.Order{
 		OrderID:       orderID,
 		CafeId:        req.CafeID,
@@ -51,11 +67,12 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 		OrderStatus:   structures.OrderPlaced, // Set status to "Placed"
 		PaymentStatus: structures.Pending,     // Set payment status to "Pending"
 		TotalAmount:   req.TotalAmount,
-		OrderTime:     time.Now(),
+		OrderTime:     time.Now().In(location).Truncate(time.Second), // Use Asia/Kolkata timezone
 	}
 
 	// Insert into the database
 	if err := s.Db.Create(&order).Error; err != nil {
+		fmt.Println("Error placing order:", err)
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to place order",
 		})
@@ -73,15 +90,21 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 		defer wg.Done()
 		cartUpdateErr = s.Db.Model(&structures.Cart{}).
 			Where("cart_id = ?", req.CartID).
-			Update("cart_status", structures.CartOrdered).Error
+			Update("cart_status", string(structures.CartOrdered)).Error
+
+		fmt.Println("Cart status updated to ordered:", cartUpdateErr)
+
 	}()
 
 	// Update all the cart items with this cart id as ordered
 	go func() {
 		defer wg.Done()
 		cartItemsUpdateErr = s.Db.Model(&structures.CartItem{}).
-			Where("cart_id = ?", req.CartID).
+			Where("cart_id = ? AND status NOT IN ('Canceled')", req.CartID).
 			Update("status", structures.CartItemOrdered).Error
+
+		fmt.Println("Cart items status updated to ordered:", cartItemsUpdateErr)
+
 	}()
 
 	// Insert into the discounts table.
@@ -95,10 +118,14 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 			OrderId:       orderID,
 		}
 		discountUpdateErr = s.Db.Create(&discount).Error
+
+		fmt.Println("Discount inserted:", discountUpdateErr)
+
 	}()
 	wg.Wait()
 
 	if discountUpdateErr != nil {
+		fmt.Println("Error updating discount:", discountUpdateErr)
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update discount",
 		})
@@ -106,6 +133,7 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 
 	// Check if any errors occurred
 	if cartUpdateErr != nil || cartItemsUpdateErr != nil {
+		fmt.Println("Error updating cart or cart items:", cartUpdateErr, cartItemsUpdateErr)
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update cart or cart items status",
 		})
@@ -126,11 +154,11 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "session_id is required"})
 	}
 
-	// 1) Fetch all orders for the session (payment pending/failed example)
+	// 1) Fetch all orders for the session (payment pending/failed)
 	var orders []structures.Order
 	if err := s.Db.Where(
-		"session_id = ? AND (payment_status = ? OR payment_status = ?)",
-		req.SessionID, "Pending", "Failed",
+		"session_id = ? AND (payment_status = ? OR payment_status = ?) AND order_status != ?",
+		req.SessionID, "Pending", "Failed", structures.OrderCancelled,
 	).Find(&orders).Error; err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch orders"})
 	}
@@ -138,142 +166,103 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 	// This will store final results grouped by user
 	results := make(structures.UserOrdersMap)
 
-	// We'll need a mutex to safely update 'results'
-	var mu sync.Mutex
-
-	// We'll wait for all goroutines to finish
-	var wg sync.WaitGroup
-	wg.Add(len(orders))
-
-	// 2) For each order, spin up a goroutine
 	for _, ord := range orders {
 		// Capture the order in the loop variable
 		order := ord
 
-		go func() {
-			defer wg.Done()
+		// Prepare concurrency for cart items and user details
+		var (
+			cartItems    []structures.CartItem
+			cartItemsErr error
+		)
 
-			// Prepare concurrency for cart items and user details
-			var (
-				cartItems    []structures.CartItem
-				cartItemsErr error
-			)
+		// Only fetch items with "Ordered" status (as an example)
+		cartItemsErr = s.Db.Where(
+			"cart_id = ? AND status = ?",
+			order.CartID, structures.CartItemOrdered,
+		).Find(&cartItems).Error
 
-			// Only fetch items with "Ordered" status (as an example)
-			cartItemsErr = s.Db.Where(
-				"cart_id = ? AND status = ?",
-				order.CartID, structures.CartItemOrdered,
-			).Find(&cartItems).Error
+		// Handle errors if any
+		if cartItemsErr != nil {
+			// You might want to log or handle partial results differently
+			fmt.Println("Failed to fetch user or cart items:", cartItemsErr)
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to fetch user or cart items",
+			})
+		}
 
-			// Handle errors if any
-			if cartItemsErr != nil {
-				// You might want to log or handle partial results differently
-				fmt.Println("Failed to fetch user or cart items:", cartItemsErr)
-				return
-			}
+		// Parse customizations for each cart item
+		var cartItemDetails []structures.CartItemDetail
+		for _, ci := range cartItems {
+			// Parse JSON customizations
+			var customizations []structures.Customization
 
-			// Parse customizations for each cart item
-			var cartItemDetails []structures.CartItemDetail
-			for _, ci := range cartItems {
-				// Parse JSON customizations
-				var crossSell []structures.CrossSells
-				var customizations []structures.Customization
+			// See is customisations exist
+			if len(ci.CustomizationIDs) == 0 {
+				fmt.Println("No customizations found")
+			} else {
 
-				// See is customisations exist
-				if len(ci.CustomizationIDs) == 0 {
-					fmt.Println("No customizations found")
-				} else {
-
-					var customizationIDs []string
-					if err := json.Unmarshal(ci.CustomizationIDs, &customizationIDs); err != nil {
-						fmt.Println("Failed to unmarshal customization IDs:", err)
-						continue
-					}
-
-					// Run a for loop on customizations and fetch the id and name from item customizations table
-					for _, id := range customizationIDs {
-						var customization structures.ItemCustomization
-						if err := s.Db.Where("id = ?", id).First(&customization).Error; err != nil {
-							fmt.Println("Failed to fetch customization:", err)
-							continue
-						}
-						customizations = append(customizations, structures.Customization{
-							ID:         customization.ID,
-							OptionName: customization.OptionName,
-						})
-					}
-
-					fmt.Println("Printin customization", customizations)
-				}
-
-				if len(ci.CrossSellItemIDs) == 0 {
-					fmt.Println("No cross sells found")
-				} else {
-					var crossSellIDs []string
-					if err := json.Unmarshal(ci.CrossSellItemIDs, &crossSellIDs); err != nil {
-						fmt.Println("Failed to unmarshal cross sell IDs:", err)
-						continue
-					}
-
-					// Run a for loop on cross sell ids to fetch the name and id of the items from menu items table
-					for _, id := range crossSellIDs {
-						var item structures.MenuItem
-						if err := s.Db.Where("id =?", id).First(&item).Error; err != nil {
-							fmt.Println("Failed to fetch item:", err)
-							continue
-						}
-						crossSell = append(crossSell, structures.CrossSells{
-							ID:   item.ID,
-							Name: item.Name,
-						})
-					}
-				}
-
-				// Find item name based on the item id from menu items table
-				var item structures.MenuItem
-				if err := s.Db.Where("id = ?", ci.ItemID).First(&item).Error; err != nil {
-					fmt.Println("Failed to fetch item:", err)
+				var customizationIDs []string
+				if err := json.Unmarshal(ci.CustomizationIDs, &customizationIDs); err != nil {
+					fmt.Println("Failed to unmarshal customization IDs:", err)
 					continue
 				}
 
-				cartItemDetails = append(cartItemDetails, structures.CartItemDetail{
-					ItemName:       item.Name,
-					CartItemID:     ci.CartItemID,
-					ItemID:         ci.ItemID,
-					Quantity:       ci.Quantity,
-					Price:          ci.Price,
-					SpecialRequest: ci.SpecialRequest,
-					Customizations: customizations,
-					CrossSells:     crossSell,
-				})
+				// Run a for loop on customizations and fetch the id and name from item customizations table
+				for _, id := range customizationIDs {
+					var customization structures.ItemCustomization
+					if err := s.Db.Where("id = ?", id).First(&customization).Error; err != nil {
+						fmt.Println("Failed to fetch customization:", err)
+						continue
+					}
+					customizations = append(customizations, structures.Customization{
+						ID:         customization.ID,
+						OptionName: customization.OptionName,
+					})
+				}
+
+				fmt.Println("Printin customization", customizations)
 			}
 
-			// Fetch discount from the order id
-			var discount structures.Discount
-			if err := s.Db.Where("order_id = ?", order.OrderID).First(&discount).Error; err != nil {
-				fmt.Println("Failed to fetch discount:", err)
-				return
+			// Find item name based on the item id from menu items table
+			var item structures.MenuItem
+			if err := s.Db.Where("id = ?", ci.ItemID).First(&item).Error; err != nil {
+				fmt.Println("Failed to fetch item:", err)
+				continue
 			}
 
-			// Build an OrderResponse
-			response := structures.OrderResponse{
-				OrderID:     order.OrderID,
-				CartID:      order.CartID,
-				CartItems:   cartItemDetails,
-				OrderedAt:   order.OrderTime,
-				Discount:    discount.DiscountValue,
-				TotalAmount: order.TotalAmount,
-			}
+			cartItemDetails = append(cartItemDetails, structures.CartItemDetail{
+				ItemName:       item.Name,
+				CartItemID:     ci.CartItemID,
+				ItemID:         ci.ItemID,
+				Quantity:       ci.Quantity,
+				Price:          ci.Price,
+				SpecialRequest: ci.SpecialRequest,
+				Customizations: customizations,
+			})
+		}
 
-			// 3) Concurrency-safe append to 'results'
-			mu.Lock()
-			results[order.UserID] = append(results[order.UserID], response)
-			mu.Unlock()
-		}()
+		// Fetch discount from the order id
+		var discount structures.Discount
+		if err := s.Db.Where("order_id = ?", order.OrderID).First(&discount).Error; err != nil {
+			fmt.Println("Failed to fetch discount:", err)
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to fetch discount",
+			})
+		}
+
+		// Build an OrderResponse
+		response := structures.OrderResponse{
+			OrderID:     order.OrderID,
+			CartID:      order.CartID,
+			CartItems:   cartItemDetails,
+			OrderedAt:   order.OrderTime,
+			Discount:    discount.DiscountValue,
+			TotalAmount: order.TotalAmount,
+		}
+
+		results[order.UserID] = append(results[order.UserID], response)
 	}
-
-	// 4) Wait for all fetch goroutines to complete
-	wg.Wait()
 
 	// 5) Transform the map into your final JSON shape
 	// e.g. you might want an array of objects:

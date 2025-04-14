@@ -36,9 +36,10 @@ const (
 type CartItemStatus string
 
 const (
-	CartItemActive   CartItemStatus = "Active"
-	CartItemOrdered  CartItemStatus = "Ordered"
-	CartItemCanceled CartItemStatus = "Canceled"
+	CartItemActive    CartItemStatus = "Active"
+	CartItemOrdered   CartItemStatus = "Ordered"
+	CartItemCanceled  CartItemStatus = "Canceled"
+	CartItemDelivered CartItemStatus = "Delivered"
 )
 
 // Role Enum (User Session)
@@ -63,6 +64,7 @@ type OrderStatus string
 const (
 	OrderPlaced    OrderStatus = "Placed"
 	OrderCancelled OrderStatus = "Cancelled"
+	OrderConfirmed OrderStatus = "Confirmed"
 )
 
 // PaymentMethod Enum
@@ -80,7 +82,7 @@ type PaymentStatus string
 
 const (
 	Pending   PaymentStatus = "Pending"
-	Completed PaymentStatus = "Completed"
+	Completed PaymentStatus = "paid"
 	Failed    PaymentStatus = "Failed"
 )
 
@@ -183,12 +185,11 @@ type MenuItem struct {
 	ID               uint           `gorm:"primaryKey;autoIncrement" json:"id"`
 	CafeID           uint           `gorm:"not null" json:"cafe_id"`
 	Category         string         `gorm:"type:varchar(50);not null" json:"category"`
-	SubCategory      string         `gorm:"type:varchar(50)" json:"sub_category"`
 	Name             string         `gorm:"type:varchar(100);not null" json:"name"`
 	Description      string         `gorm:"type:text" json:"description"`
 	ShortDescription string         `gorm:"type:varchar(255)" json:"short_description"`
 	Price            float64        `gorm:"type:decimal(10,2);not null" json:"price"`
-	IsCustomizable   string         `gorm:"type:varchar(255)" json:"is_customizable"`
+	IsCustomizable   bool           `gorm:"default:false" json:"is_customizable"`
 	FoodType         string         `gorm:"type:varchar(10);not null" json:"food_type"`
 	Cuisine          Cuisine        `gorm:"type:varchar(50)" json:"cuisine"`        // Cuisine as enum
 	DietaryLabels    DietaryLabel   `gorm:"type:varchar(50)" json:"dietary_labels"` // Dietary label as enum
@@ -288,16 +289,18 @@ type UserSession struct {
 
 // Cart Table
 type Cart struct {
-	CartID         string     `gorm:"type:varchar(100);primaryKey" json:"cart_id"`
-	SessionID      string     `gorm:"type:varchar(100);not null" json:"session_id"`
-	UserID         uint       `gorm:"not null" json:"user_id"`
-	CafeId         uint       `gorm:"not null" json:"cafe_id"`
-	CartStatus     CartStatus `gorm:"type:varchar(50);not null" json:"cart_status"`
-	TotalAmount    float64    `gorm:"type:decimal(10,2)" json:"total_amount"`
-	DiscountAmount float64    `gorm:"type:decimal(10,2)" json:"discount_amount"`
-	Note           string     `gorm:"type:text" json:"note"`
-	CreatedAt      time.Time  `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt      time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
+	CartID           string     `gorm:"type:varchar(100);primaryKey" json:"cart_id"`
+	SessionID        string     `gorm:"type:varchar(100);not null" json:"session_id"`
+	UserID           uint       `gorm:"not null" json:"user_id"`
+	CafeId           uint       `gorm:"not null" json:"cafe_id"`
+	CartStatus       CartStatus `gorm:"type:varchar(50);not null" json:"cart_status"`
+	TotalAmount      float64    `gorm:"type:decimal(10,2)" json:"total_amount"`
+	DiscountAmount   float64    `gorm:"type:decimal(10,2)" json:"discount_amount"`
+	Note             string     `gorm:"type:text" json:"note"`
+	ModifiedByWaiter string     `gorm:"type:varchar(20)" json:"modified_by_waiter"`
+	WaiterID         uint       `gorm:"not null" json:"waiter_id"`
+	CreatedAt        time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt        time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 type CartItem struct {
@@ -312,6 +315,9 @@ type CartItem struct {
 	Status           CartItemStatus `gorm:"type:varchar(50)" json:"status"`
 	CustomizationIDs datatypes.JSON `gorm:"type:jsonb" json:"customization_ids"`   // Customization IDs as JSON array
 	CrossSellItemIDs datatypes.JSON `gorm:"type:jsonb" json:"cross_sell_item_ids"` // Cross Sell Item IDs as JSON array
+	ModifiedByWaiter string         `gorm:"type:varchar(20)" json:"modified_by_waiter"`
+	WaiterID         uint           `gorm:"type:int" json:"waiter_id"`
+	DeliveredAt      *time.Time     `gorm:"type:time" json:"delivered_at"` // Changed to pointer for optional value
 	CreatedAt        time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt        time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 }
@@ -323,8 +329,10 @@ type Order struct {
 	CafeId        uint          `gorm:"not null" json:"cafe_id"`
 	SessionID     string        `gorm:"type:varchar(100);not null" json:"session_id"`
 	UserID        uint          `gorm:"not null" json:"user_id"`
+	WaiterID      uint          `gorm:"type:int" json:"waiter_id"`
 	OrderStatus   OrderStatus   `gorm:"type:varchar(50);not null" json:"order_status"`
 	PaymentStatus PaymentStatus `gorm:"type:varchar(50);not null" json:"payment_status"`
+	PaymentMode   string        `gorm:"type:varchar(50);not null" json:"payment_mode"`
 	TotalAmount   float64       `gorm:"type:decimal(10,2)" json:"total_amount"`
 	OrderTime     time.Time     `gorm:"autoCreateTime" json:"order_time"`
 	CompletedTime *time.Time    `json:"completed_time,omitempty"`
@@ -342,7 +350,9 @@ type UpdateCartResult struct {
 	ReferenceReason       string    `gorm:"type:text" json:"reference_reason"`
 	DiscountedPrice       float64   `gorm:"type:decimal(5,2)" json:"discounted_price"`
 	DiscountPercent       float64   `gorm:"type:decimal(5,2)" json:"discount_percent"`
-	UserAction            string    `gorm:"type:varchar(50);default:'pending'" json:"user_action"` // "added", "ignored", "pending"
+	UserAction            string    `gorm:"type:varchar(50);default:'pending'" json:"user_action"`   // "added", "ignored", "pending"
+	WaiterAction          string    `gorm:"type:varchar(50);default:'pending'" json:"waiter_action"` // "added", "pending"
+	WaiterID              uint      `gorm:"type:int" json:"waiter_id"`
 	CreatedAt             time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
 
@@ -402,6 +412,7 @@ type Cafe struct {
 	OpeningTime  time.Time `gorm:"type:time" json:"opening_time"`
 	ClosingTime  time.Time `gorm:"type:time" json:"closing_time"`
 	Rating       float64   `gorm:"default:0.0" json:"rating"`
+	ImageURL     string    `gorm:"type:varchar(255)" json:"image_url"`
 	TotalRatings uint      `gorm:"default:0" json:"total_ratings"`
 	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updated_at"`
