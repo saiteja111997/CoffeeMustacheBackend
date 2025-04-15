@@ -34,7 +34,7 @@ func (s *Server) RecordUserSession(c *fiber.Ctx) error {
 		// If no active session, create a new session with a unique session ID using ksuid
 		newSession := structures.Session{
 			SessionID:     ksuid.New().String(),
-			TableID:       req.TableId,
+			TableName:     req.TableId,
 			CafeID:        req.CafeId,
 			SessionStatus: structures.Active,
 			StartTime:     time.Now(),

@@ -266,7 +266,7 @@ type CuratedCartItem struct {
 // Sessions Table
 type Session struct {
 	SessionID     string        `gorm:"primaryKey;type:varchar(100)" json:"session_id"`
-	TableID       string        `gorm:"type:varchar(100);not null" json:"table_id"`
+	TableName     string        `gorm:"type:varchar(100);not null" json:"table_name"`
 	CafeID        uint          `gorm:"not null" json:"cafe_id"`
 	SessionStatus SessionStatus `gorm:"type:varchar(50);not null" json:"session_status"`
 	StartTime     time.Time     `json:"start_time"`
