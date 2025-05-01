@@ -208,7 +208,7 @@ type MenuItem struct {
 	AvailableFrom    string         `gorm:"type:varchar(255)" json:"available_from"`
 	AvailableTill    string         `gorm:"type:varchar(255)" json:"available_till"`
 	AvailableAllDay  string         `gorm:"type:varchar(255)" json:"available_all_day"`
-	IsAvailable      string         `gorm:"type:varchar(255)" json:"is_available"`
+	IsAvailable      bool           `gorm:"default:true" json:"is_available"`
 	KitchenArea      string         `gorm:"type:varchar(255)" json:"kitchen_area"`
 	Tag              datatypes.JSON `gorm:"type:jsonb" json:"tag"`
 	AudioURL         string         `gorm:"type:varchar(255)" json:"audio_url"`
@@ -317,6 +317,8 @@ type CartItem struct {
 	CrossSellItemIDs datatypes.JSON `gorm:"type:jsonb" json:"cross_sell_item_ids"` // Cross Sell Item IDs as JSON array
 	ModifiedByWaiter string         `gorm:"type:varchar(20)" json:"modified_by_waiter"`
 	WaiterID         uint           `gorm:"type:int" json:"waiter_id"`
+	IsDelivered      bool           `gorm:"default:false" json:"is_delivered"`
+	KOTStatus        bool           `gorm:"default:false" json:"kot_status"`
 	DeliveredAt      *time.Time     `gorm:"type:time" json:"delivered_at"` // Changed to pointer for optional value
 	CreatedAt        time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt        time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
@@ -399,25 +401,46 @@ type CafeFeedback struct {
 }
 
 type Cafe struct {
-	ID           uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	CafeCode     string    `gorm:"type:varchar(255)" json:"cafe_code"`
-	Name         string    `gorm:"type:varchar(100);not null" json:"name"`
-	Address      string    `gorm:"type:varchar(255)" json:"address"`
-	City         string    `gorm:"type:varchar(100)" json:"city"`
-	State        string    `gorm:"type:varchar(100)" json:"state"`
-	Country      string    `gorm:"type:varchar(100)" json:"country"`
-	ZipCode      string    `gorm:"type:varchar(20)" json:"zip_code"`
-	Phone        string    `gorm:"type:varchar(20)" json:"phone"`
-	Email        string    `gorm:"type:varchar(100)" json:"email"`
-	OpeningTime  time.Time `gorm:"type:time" json:"opening_time"`
-	ClosingTime  time.Time `gorm:"type:time" json:"closing_time"`
-	Rating       float64   `gorm:"default:0.0" json:"rating"`
-	ImageURL     string    `gorm:"type:varchar(255)" json:"image_url"`
-	TotalRatings uint      `gorm:"default:0" json:"total_ratings"`
-	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	ID           uint           `gorm:"primaryKey;autoIncrement" json:"id"`
+	CafeCode     string         `gorm:"type:varchar(255)" json:"cafe_code"`
+	Name         string         `gorm:"type:varchar(100);not null" json:"name"`
+	Address      string         `gorm:"type:varchar(255)" json:"address"`
+	City         string         `gorm:"type:varchar(100)" json:"city"`
+	State        string         `gorm:"type:varchar(100)" json:"state"`
+	Country      string         `gorm:"type:varchar(100)" json:"country"`
+	ZipCode      string         `gorm:"type:varchar(20)" json:"zip_code"`
+	Phone        string         `gorm:"type:varchar(20)" json:"phone"`
+	Email        datatypes.JSON `gorm:"type:jsonb" json:"email"`
+	OpeningTime  time.Time      `gorm:"type:time" json:"opening_time"`
+	ClosingTime  time.Time      `gorm:"type:time" json:"closing_time"`
+	Rating       float64        `gorm:"default:0.0" json:"rating"`
+	ImageURL     string         `gorm:"type:varchar(255)" json:"image_url"`
+	TotalRatings uint           `gorm:"default:0" json:"total_ratings"`
+	CreatedAt    time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt    time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 func (Cafe) TableName() string {
 	return "cafes"
+}
+
+type Table struct {
+	ID            uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	Name          string    `gorm:"type:varchar(100);not null" json:"name"`
+	Description   string    `gorm:"type:text" json:"description"`
+	CafeID        uint      `gorm:"not null" json:"cafe_id"`
+	Capacity      uint      `gorm:"not null" json:"capacity"`
+	SeatingAreaID uint      `gorm:"not null" json:"seating_area_id"`
+	CreatedAt     time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt     time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+type CustomerRequest struct {
+	ID          uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID      uint      `gorm:"not null" json:"user_id"`
+	CafeID      uint      `gorm:"not null" json:"cafe_id"`
+	TableNumber string    `gorm:"not null" json:"table_number"`
+	SessionID   string    `gorm:"not null" json:"session_id"`
+	RequestType string    `gorm:"type:varchar(50);not null" json:"request_type"`
+	RequestedAt time.Time `gorm:"autoCreateTime" json:"requested_at"`
 }

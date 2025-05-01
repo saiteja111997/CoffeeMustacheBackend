@@ -208,6 +208,32 @@ functions:
           method: POST
           cors: true
 
+  CallWaiter:
+    handler: bootstrap
+    events:
+      - http:
+          path: /callWaiter
+          method: POST
+          cors: true
+
+  CheckSessionStatus:
+    handler: bootstrap
+    events:
+      - http:
+          path: /checkSessionStatus
+          method: POST
+          cors: true
+
+  GetCafeDetails:
+    handler: bootstrap
+    events:
+      - http:
+          path: /getCafeDetails
+          method: POST
+          cors: true
+
+  
+
   
 
   

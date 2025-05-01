@@ -156,7 +156,7 @@ func main() {
 	}
 
 	db = db.Debug()
-	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.CuratedCart{}, &structures.CuratedCartItem{}, &structures.Session{}, &structures.UserSession{}, &structures.Cart{}, &structures.CartItem{}, &structures.Order{}, &structures.Order{}, &structures.UpdateCartResult{}, &structures.MenuAIRecords{}, &structures.Discount{}, &structures.Cafe{}, &structures.ItemFeedback{}, &structures.CafeFeedback{})
+	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.CuratedCart{}, &structures.CuratedCartItem{}, &structures.Session{}, &structures.UserSession{}, &structures.Cart{}, &structures.CartItem{}, &structures.Order{}, &structures.Order{}, &structures.UpdateCartResult{}, &structures.MenuAIRecords{}, &structures.Discount{}, &structures.Cafe{}, &structures.ItemFeedback{}, &structures.CafeFeedback{}, &structures.CustomerRequest{})
 	fmt.Println("Auto migration done!!")
 
 	defer db.Close()
@@ -179,12 +179,14 @@ func main() {
 
 	app.Get("/ping", svr.HealthCheck)
 	// Apply JWT middleware to protected routes
+	app.Post("/getCafeDetails", ExtractJWT, svr.GetCafeDetails)
 	app.Post("/upsellItem", ExtractJWT, svr.UpsellItem)
 	app.Post("/getUpsellAndCrossSell", ExtractJWT, svr.GetUpsellAndCrossSell)
 	app.Post("/askMenuAI", ExtractJWT, svr.AskMenuAI)
 	app.Post("/getMenu", ExtractJWT, svr.GetMenu)
 	app.Post("/getFilteredList", ExtractJWT, svr.GetFilteredList)
 	app.Post("/getCrossSellData", ExtractJWT, svr.GetCrossSellData)
+	app.Post("/checkSessionStatus", ExtractJWT, svr.CheckSessionStatus)
 	app.Post("/recordUserSession", ExtractJWT, svr.RecordUserSession)
 	app.Get("/curatedCartCronJob", svr.RunCuratedCartsJob)
 	app.Post("/getCuratedCart", ExtractJWT, svr.GetCuratedCart)
@@ -201,6 +203,7 @@ func main() {
 	app.Post("/invalidateSession", ExtractJWT, svr.InvalidateSession)
 	app.Post("/getFeedbackForm", ExtractJWT, svr.GetFeedbackForm)
 	app.Post("/submitFeedback", ExtractJWT, svr.SubmitFeedback)
+	app.Post("/callWaiter", ExtractJWT, svr.CallWaiter)
 
 	fmt.Println("Routing established!!")
 

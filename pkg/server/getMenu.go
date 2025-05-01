@@ -45,9 +45,9 @@ func (s *Server) GetMenu(c *fiber.Ctx) error {
 	// Fetch menu items from the database or any data source
 	var err error
 	if foodType == "" {
-		err = s.Db.Where("cafe_id = ?", cafeId).Find(&menuItems).Error
+		err = s.Db.Where("cafe_id = ? AND is_available = true", cafeId).Find(&menuItems).Error
 	} else {
-		err = s.Db.Where("cafe_id = ? AND food_type = ?", cafeId, foodType).Find(&menuItems).Error
+		err = s.Db.Where("cafe_id = ? AND food_type = ? AND is_available = true", cafeId, foodType).Find(&menuItems).Error
 	}
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
