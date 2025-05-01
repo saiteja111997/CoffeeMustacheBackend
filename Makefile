@@ -7,3 +7,7 @@ build : clean
 
 deploy_prod: build 
 	serverless deploy --stage prod --aws-profile tejaCM
+
+deploy_dev: build
+	serverless deploy --stage dev --aws-profile tejaCM
+
