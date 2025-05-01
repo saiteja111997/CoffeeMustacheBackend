@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/segmentio/ksuid"
 	"gorm.io/gorm"
 )
 
@@ -58,9 +57,16 @@ func (s *Server) AddToCart(c *fiber.Ctx) error {
 
 	// Check if Cart ID is provided
 	if cartID == "" {
-		// Create a new Cart with a unique CartID using ksuid
-		cartID = ksuid.New().String()
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Cart ID is required",
+		})
+	}
 
+	// Check if the cart already exists in the database
+	var existingCart structures.Cart
+	result := s.Db.Where("cart_id = ?", cartID).First(&existingCart)
+	if result.RowsAffected == 0 {
+		// Cart does not exist, create a new one
 		newCart := structures.Cart{
 			CartID:         cartID,
 			CafeId:         req.CafeID,
@@ -79,12 +85,19 @@ func (s *Server) AddToCart(c *fiber.Ctx) error {
 				"error": "Failed to create cart",
 			})
 		}
+	} else if result.Error != nil {
+		// Database error
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Database error",
+		})
 	} else {
+		// Cart exists, update the amounts
 		if err := s.Db.Model(&structures.Cart{}).
 			Where("cart_id = ?", cartID).
 			Updates(map[string]interface{}{
 				"total_amount":    req.TotalAmount,
 				"discount_amount": req.DiscountAmount,
+				"updated_at":      time.Now(),
 			}).Error; err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to update cart amounts",
