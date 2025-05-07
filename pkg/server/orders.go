@@ -45,6 +45,22 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 		})
 	}
 
+	// Get the status of the session using session ID
+	var session structures.Session
+	if err := s.Db.Where("session_id = ?", req.SessionID).First(&session).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Database error",
+		})
+	}
+	sessionStatus := session.SessionStatus
+
+	// Check if the session is inactive
+	if structures.SessionStatus(sessionStatus) != structures.Active {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Session is inactive",
+		})
+	}
+
 	// Generate a new Order ID using ksuid
 	orderID := ksuid.New().String()
 	fmt.Println("Printing Order ID", orderID)
@@ -59,15 +75,16 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 	}
 
 	order := structures.Order{
-		OrderID:       orderID,
-		CafeId:        req.CafeID,
-		CartID:        req.CartID,
-		SessionID:     req.SessionID,
-		UserID:        userId,
-		OrderStatus:   structures.OrderPlaced, // Set status to "Placed"
-		PaymentStatus: structures.Pending,     // Set payment status to "Pending"
-		TotalAmount:   req.TotalAmount,
-		OrderTime:     time.Now().In(location).Truncate(time.Second), // Use Asia/Kolkata timezone
+		OrderID:        orderID,
+		CafeId:         req.CafeID,
+		CartID:         req.CartID,
+		SessionID:      req.SessionID,
+		UserID:         userId,
+		SpecialRequest: req.SpecialRequest,
+		OrderStatus:    structures.OrderPlaced, // Set status to "Placed"
+		PaymentStatus:  structures.Pending,     // Set payment status to "Pending"
+		TotalAmount:    req.TotalAmount,
+		OrderTime:      time.Now().In(location).Truncate(time.Second), // Use Asia/Kolkata timezone
 	}
 
 	// Insert into the database

@@ -46,11 +46,12 @@ type OrderResponse struct {
 
 // PlaceOrderRequest represents the request payload
 type PlaceOrderRequest struct {
-	CartID      string  `json:"cart_id"`
-	CafeID      uint    `json:"cafe_id"`
-	SessionID   string  `json:"session_id"`
-	TotalAmount float64 `json:"total_amount"`
-	Discount    float64 `json:"discount"`
+	CartID         string  `json:"cart_id"`
+	CafeID         uint    `json:"cafe_id"`
+	SessionID      string  `json:"session_id"`
+	TotalAmount    float64 `json:"total_amount"`
+	Discount       float64 `json:"discount"`
+	SpecialRequest string  `json:"special_request"`
 }
 
 // PlaceOrderResponse represents the response payload

@@ -232,6 +232,14 @@ functions:
           method: POST
           cors: true
 
+  AddSpecialRequest:
+    handler: bootstrap
+    events:
+      - http:
+          path: /addSpecialRequest
+          method: POST
+          cors: true
+
   
 
   

@@ -204,6 +204,7 @@ func main() {
 	app.Post("/getFeedbackForm", ExtractJWT, svr.GetFeedbackForm)
 	app.Post("/submitFeedback", ExtractJWT, svr.SubmitFeedback)
 	app.Post("/callWaiter", ExtractJWT, svr.CallWaiter)
+	app.Post("/addSpecialRequest", ExtractJWT, svr.AddSpecialRequest)
 
 	fmt.Println("Routing established!!")
 

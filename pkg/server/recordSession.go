@@ -2,6 +2,7 @@ package server
 
 import (
 	"coffeeMustacheBackend/pkg/structures"
+	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -33,24 +34,37 @@ func (s *Server) RecordUserSession(c *fiber.Ctx) error {
 		})
 	}
 
-	// Create a new session with a unique session ID using ksuid
-	newSession := structures.Session{
-		SessionID:     ksuid.New().String(),
-		TableName:     req.TableId,
-		CafeID:        req.CafeId,
-		SessionStatus: structures.Active,
-		StartTime:     time.Now(),
-		CreatedBy:     userId,
-	}
+	// Check if there is an active session for the given table
+	var session structures.Session
+	if err := s.Db.Where("table_name = ? AND session_status = ?", req.TableId, "Active").First(&session).Error; err != nil {
+		// If no active session, create a new session with a unique session ID using ksuid
 
-	if err := s.Db.Create(&newSession).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to create new session",
-		})
-	}
+		// if record not found create a new session
+		if err.Error() == "record not found" {
+			newSession := structures.Session{
+				SessionID:     ksuid.New().String(),
+				TableName:     req.TableId,
+				CafeID:        req.CafeId,
+				SessionStatus: structures.Active,
+				StartTime:     time.Now(),
+				CreatedBy:     userId,
+			}
 
-	// Assign the newly created session for further user session checks
-	session := newSession
+			if err := s.Db.Create(&newSession).Error; err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": "Failed to create new session",
+				})
+			}
+
+			// Assign the newly created session for further user session checks
+			session = newSession
+		} else {
+			fmt.Println("Error fetching session:", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Failed to fetch session",
+			})
+		}
+	}
 
 	// Return success response
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
