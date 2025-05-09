@@ -180,6 +180,8 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch orders"})
 	}
 
+	fmt.Println("Length of the orders:", len(orders))
+
 	// This will store final results grouped by user
 	results := make(structures.UserOrdersMap)
 
