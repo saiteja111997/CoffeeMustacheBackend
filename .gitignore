@@ -27,4 +27,3 @@ bootstrap
 .serverless
 env.json
 envDev.json
-
