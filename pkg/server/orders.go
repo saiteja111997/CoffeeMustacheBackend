@@ -186,6 +186,12 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 	results := make(structures.UserOrdersMap)
 
 	for _, ord := range orders {
+
+		// If user id is 0 continue to next order
+		if ord.UserID == 0 {
+			continue
+		}
+
 		// Capture the order in the loop variable
 		order := ord
 

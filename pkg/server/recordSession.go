@@ -34,6 +34,8 @@ func (s *Server) RecordUserSession(c *fiber.Ctx) error {
 		})
 	}
 
+	status := true
+
 	// Check if there is an active session for the given table
 	var session structures.Session
 	if err := s.Db.Where("table_name = ? AND session_status = ?", req.TableId, "Active").First(&session).Error; err != nil {
@@ -58,6 +60,7 @@ func (s *Server) RecordUserSession(c *fiber.Ctx) error {
 
 			// Assign the newly created session for further user session checks
 			session = newSession
+			status = false
 		} else {
 			fmt.Println("Error fetching session:", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -71,6 +74,7 @@ func (s *Server) RecordUserSession(c *fiber.Ctx) error {
 		"message":    "User session recorded successfully",
 		"session_id": session.SessionID,
 		"user_id":    userId,
+		"status":     status,
 	})
 }
 
