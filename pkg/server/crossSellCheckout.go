@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
@@ -36,22 +37,23 @@ func (s *Server) GetCheckoutCrossSells(c *fiber.Ctx) error {
 	var bestItems []CheckoutCrossSellResponse
 	var fetchErr error
 	err := s.Db.Raw(`
-			SELECT id AS item_id, name, cm_category AS category, price, image_url, tag, short_description, 
-				   discount as discount_percent, 
-				   ROUND(price - (price * discount / 100)) AS discounted_price
-			FROM menu_items 
-			WHERE cm_category IN ('Desserts & Sweets', 'Beverages') 
-			AND tag IN ('bestseller', 'bestrated') 
-			AND id NOT IN (?) 
-			AND discount_section IN ('CrossSellCheckout')
-			ORDER BY popularity_score DESC
-		`, req.ItemIDs).Scan(&bestItems).Error
+		SELECT id AS item_id, name, cm_category AS category, price, image_url, tag, short_description, 
+			discount as discount_percent, 
+			ROUND(price - (price * discount / 100)) AS discounted_price
+		FROM menu_items 
+		WHERE cm_category IN ('Desserts & Sweets', 'Beverages') 
+		AND (tag @> '["bestseller"]' OR tag @> '["bestrated"]')
+		AND id NOT IN (?)
+		ORDER BY popularity_score DESC
+`, req.ItemIDs).Scan(&bestItems).Error
+
 	if err != nil {
 		fetchErr = err
 	}
 
 	// Handle errors
 	if fetchErr != nil {
+		fmt.Println("Error fetching checkout cross-sell items: ", err.Error())
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch checkout cross-sell items",
 		})

@@ -82,7 +82,7 @@ functions:
           method: POST
           cors: true
       - schedule:
-          rate: rate(60 minutes)  # Keeps the Lambda warm
+          rate: rate(2 minutes)  # Keeps the Lambda warm
           enabled: true
           input:
             base_item_id: 0

@@ -118,6 +118,7 @@ func (s *Server) AddToCart(c *fiber.Ctx) error {
 		newCartItem := structures.CartItem{
 			CartItemID:       item.CartItemId,
 			CartID:           cartID,
+			CafeID:           req.CafeID,
 			ItemID:           item.ItemID,
 			Quantity:         item.Quantity,
 			Price:            item.Price,
