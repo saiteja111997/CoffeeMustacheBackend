@@ -3,6 +3,7 @@ package server
 import (
 	"coffeeMustacheBackend/pkg/structures"
 	"fmt"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -42,18 +43,28 @@ func (s *Server) GetMenu(c *fiber.Ctx) error {
 
 	var menuItems []structures.MenuItem
 
-	// Fetch menu items from the database or any data source
+	startTime := time.Now()
+
+	// Fetch only the required fields from the database
 	var err error
+	fields := []string{
+		"id", "cafe_id", "category", "name", "description", "short_description",
+		"price", "is_customizable", "image_url", "video_url", "rating", "total_ratings",
+	}
 	if foodType == "" {
-		err = s.Db.Where("cafe_id = ? AND is_available = true", cafeId).Find(&menuItems).Error
+		err = s.Db.Select(fields).Where("cafe_id = ? AND is_available = true", cafeId).Find(&menuItems).Error
 	} else {
-		err = s.Db.Where("cafe_id = ? AND food_type = ? AND is_available = true", cafeId, foodType).Find(&menuItems).Error
+		err = s.Db.Select(fields).Where("cafe_id = ? AND food_type = ? AND is_available = true", cafeId, foodType).Find(&menuItems).Error
 	}
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch menu items",
 		})
 	}
+
+	currentTime := time.Now()
+
+	fmt.Println("Printing time difference : ", currentTime.Sub(startTime))
 
 	fmt.Println("No of Menu items : ", len(menuItems))
 

@@ -265,15 +265,16 @@ type CuratedCartItem struct {
 
 // Sessions Table
 type Session struct {
-	SessionID     string        `gorm:"primaryKey;type:varchar(100)" json:"session_id"`
-	TableName     string        `gorm:"type:varchar(100);not null" json:"table_name"`
-	CafeID        uint          `gorm:"not null" json:"cafe_id"`
-	SessionStatus SessionStatus `gorm:"type:varchar(50);not null" json:"session_status"`
-	StartTime     time.Time     `json:"start_time"`
-	EndTime       *time.Time    `json:"end_time,omitempty"`
-	CreatedBy     uint          `gorm:"not null" json:"created_by"`
-	CreatedAt     time.Time     `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt     time.Time     `gorm:"autoUpdateTime" json:"updated_at"`
+	SessionID       string        `gorm:"primaryKey;type:varchar(100)" json:"session_id"`
+	TableName       string        `gorm:"type:varchar(100);not null" json:"table_name"`
+	CafeID          uint          `gorm:"not null" json:"cafe_id"`
+	SessionStatus   SessionStatus `gorm:"type:varchar(50);not null" json:"session_status"`
+	StartTime       time.Time     `json:"start_time"`
+	EndTime         *time.Time    `json:"end_time,omitempty"`
+	PaymentImageURL string        `gorm:"type:varchar(255)" json:"payment_image_url"`
+	CreatedBy       uint          `gorm:"not null" json:"created_by"`
+	CreatedAt       time.Time     `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt       time.Time     `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // User Sessions Table
@@ -307,6 +308,7 @@ type CartItem struct {
 	CartItemID       string         `gorm:"type:varchar(100);primaryKey" json:"cart_item_id"`
 	CartID           string         `gorm:"type:varchar(100);not null" json:"cart_id"`
 	ItemID           uint           `gorm:"not null" json:"item_id"`
+	CafeID           uint           `json:"cafe_id"` // Removed not null
 	Quantity         int            `gorm:"not null" json:"quantity"`
 	Price            float64        `gorm:"type:decimal(10,2)" json:"price"`
 	AddedAt          time.Time      `gorm:"autoCreateTime" json:"added_at"`
@@ -336,6 +338,7 @@ type Order struct {
 	OrderStatus    OrderStatus   `gorm:"type:varchar(50);not null" json:"order_status"`
 	PaymentStatus  PaymentStatus `gorm:"type:varchar(50);not null" json:"payment_status"`
 	PaymentMode    string        `gorm:"type:varchar(50);not null" json:"payment_mode"`
+	IsClicked      bool          `gorm:"default:false" json:"is_clicked"`
 	TotalAmount    float64       `gorm:"type:decimal(10,2)" json:"total_amount"`
 	OrderTime      time.Time     `gorm:"autoCreateTime" json:"order_time"`
 	CompletedTime  *time.Time    `json:"completed_time,omitempty"`
@@ -442,6 +445,7 @@ type CustomerRequest struct {
 	CafeID      uint      `gorm:"not null" json:"cafe_id"`
 	TableNumber string    `gorm:"not null" json:"table_number"`
 	SessionID   string    `gorm:"not null" json:"session_id"`
+	IsClicked   bool      `gorm:"default:false" json:"is_clicked"`
 	RequestType string    `gorm:"type:varchar(50);not null" json:"request_type"`
 	RequestedAt time.Time `gorm:"autoCreateTime" json:"requested_at"`
 }

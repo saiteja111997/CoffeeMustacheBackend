@@ -76,7 +76,7 @@ func (s *Server) UpgradeCart(c *fiber.Ctx) error {
 		err := s.Db.Raw(`
 			SELECT id AS item_id, name, category, price
 			FROM menu_items 
-			WHERE id NOT IN (?)
+			WHERE id NOT IN (?) AND cafe_id = 1
 		`, req.ItemIDs).Scan(&menuItems).Error
 		if err != nil {
 			fetchMenuErr = err
