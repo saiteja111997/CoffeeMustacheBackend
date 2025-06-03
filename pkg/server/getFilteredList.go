@@ -9,7 +9,8 @@ import (
 )
 
 type TopPicksRequest struct {
-	Tag string `json:"tag"`
+	Tag    string `json:"tag"`
+	CafeID uint   `json:"cafe_id"`
 }
 
 func (s *Server) GetFilteredList(c *fiber.Ctx) error {
@@ -39,7 +40,7 @@ func (s *Server) GetFilteredList(c *fiber.Ctx) error {
 
 	// if the tag is price 200-400, run a sql query on menu items table to get all items with price between 200 and 400 and return the response directly.
 	if req.Tag == "price 200-400" {
-		if err := s.Db.Where("price BETWEEN 200 AND 400").Find(&items).Error; err != nil {
+		if err := s.Db.Where("price BETWEEN 200 AND 400 AND cafe_id = ?", req.CafeID).Find(&items).Error; err != nil {
 			if err == gorm.ErrRecordNotFound {
 				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 					"error": "No items found",
@@ -54,8 +55,8 @@ func (s *Server) GetFilteredList(c *fiber.Ctx) error {
 		})
 	}
 
-	// Fetch all items and their tags
-	if err := s.Db.Select("*").Find(&items).Error; err != nil {
+	// Fetch all items for the given cafe and their tags
+	if err := s.Db.Where("cafe_id = ?", req.CafeID).Find(&items).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"error": "No items found",
