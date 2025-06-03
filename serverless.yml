@@ -1,11 +1,11 @@
-service: coffeeMustacheBackendDev
+service: coffeeMustacheBackend
 
 provider:
   name: aws
   runtime: provided.al2
-  region: us-east-1
+  region: ap-south-1
   stage: ${opt:stage}
-  environment: ${file(envDev.json)}
+  environment: ${file(env.json)}
   httpApi:
     cors: true
 
