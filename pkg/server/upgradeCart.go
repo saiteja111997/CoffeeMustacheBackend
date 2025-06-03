@@ -17,6 +17,7 @@ import (
 type UpgradeCartRequest struct {
 	CartID  string `json:"cart_id"`
 	ItemIDs []uint `json:"item_ids"` // List of item IDs currently in the cart
+	CafeID  uint   `json:"cafe_id"`
 }
 
 type UpgradeCartResponse struct {
@@ -50,6 +51,13 @@ func (s *Server) UpgradeCart(c *fiber.Ctx) error {
 		})
 	}
 
+	// If cafe id is not found throw error
+	if req.CafeID == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "cafe_id is required",
+		})
+	}
+
 	// Fetch Menu (excluding cart items) & Cart Items
 	var cartItems []UpgradeCartResponse
 	var menuItems []UpgradeCartResponse
@@ -76,8 +84,8 @@ func (s *Server) UpgradeCart(c *fiber.Ctx) error {
 		err := s.Db.Raw(`
 			SELECT id AS item_id, name, category, price
 			FROM menu_items 
-			WHERE id NOT IN (?) AND cafe_id = 1
-		`, req.ItemIDs).Scan(&menuItems).Error
+			WHERE id NOT IN (?) AND cafe_id = ?
+		`, req.ItemIDs, req.CafeID).Scan(&menuItems).Error
 		if err != nil {
 			fetchMenuErr = err
 		}
