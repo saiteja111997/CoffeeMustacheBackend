@@ -131,6 +131,31 @@ func (s *Server) AddToCart(c *fiber.Ctx) error {
 			UpdatedAt:        time.Now(),
 		}
 
+		// If added via is UpgradeCartAi, get the latest upgrade data for the give cart id and update the user action field to "added"
+		if addedVia == structures.UpgradeCartAi {
+			var latestUpgrade structures.UpdateCartResult
+			if err := s.Db.Where("cart_id = ? AND suggested_item_id = ?", cartID, item.ItemID).
+				Order("created_at DESC").First(&latestUpgrade).Error; err != nil {
+				if err == gorm.ErrRecordNotFound {
+					return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+						"error": "No upgrade data found for the given cart ID and item ID",
+					})
+				}
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": "Database error",
+				})
+			}
+
+			// Update the user action to "added"
+			if err := s.Db.Model(&structures.UpdateCartResult{}).
+				Where("id = ?", latestUpgrade.ID).
+				Update("user_action", "added").Error; err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": "Failed to update upgrade data",
+				})
+			}
+		}
+
 		// Insert the new cart item into the database
 		if err := s.Db.Create(&newCartItem).Error; err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
