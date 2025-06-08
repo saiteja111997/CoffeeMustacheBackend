@@ -25,12 +25,14 @@ const (
 type CartInsertType string
 
 const (
-	Direct            CartInsertType = "Direct"
-	FromCuratedCart   CartInsertType = "FromCuratedCart"
-	CrossSellFocus    CartInsertType = "CrossSellFocus"
-	TopPicks          CartInsertType = "TopPicks"
-	UpgradeCartAi     CartInsertType = "UpgradeCartAi"
-	CrossSellCheckout CartInsertType = "CrossSellCheckout"
+	Direct              CartInsertType = "Direct"
+	FromCuratedCart     CartInsertType = "FromCuratedCart"
+	CrossSellFocus      CartInsertType = "CrossSellFocus"
+	TopPicks            CartInsertType = "TopPicks"
+	UpgradeCartAi       CartInsertType = "UpgradeCartAi"
+	CrossSellCheckout   CartInsertType = "CrossSellCheckout"
+	AddedByWaiter       CartInsertType = "AddedByWaiter"
+	UpgradeCartAiWaiter CartInsertType = "UpgradeCartAiWaiter"
 )
 
 type CartItemStatus string
