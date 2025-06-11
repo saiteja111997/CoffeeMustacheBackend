@@ -30,10 +30,9 @@ func (s *Server) AddSpecialRequest(c *fiber.Ctx) error {
 		})
 	}
 
-	// Update the special request for the given cart item using map
-	if err := s.Db.Model(&cartItem).Updates(map[string]interface{}{
-		"special_request": req.SpecialRequest,
-	}).Error; err != nil {
+	// Update the special request for the specific cart item
+	cartItem.SpecialRequest = req.SpecialRequest
+	if err := s.Db.Model(&cartItem).Where("cart_item_id = ?", req.CartItemId).Update("special_request", req.SpecialRequest).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Database error",
 		})
