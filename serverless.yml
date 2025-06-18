@@ -1,11 +1,11 @@
-service: coffeeMustacheBackend
+service: coffeeMustacheBackendDev
 
 provider:
   name: aws
   runtime: provided.al2
-  region: ap-south-1
+  region: us-east-1
   stage: ${opt:stage}
-  environment: ${file(env.json)}
+  environment: ${file(envDev.json)}
   httpApi:
     cors: true
 
@@ -238,6 +238,14 @@ functions:
       - http:
           path: /addSpecialRequest
           method: POST
+          cors: true
+
+  AcceptTermsAndConditions:
+    handler: bootstrap
+    events:
+      - http:
+          path: /acceptTermsAndConditions
+          method: GET
           cors: true
 
   

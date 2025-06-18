@@ -166,12 +166,20 @@ const (
 )
 
 type User struct {
-	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
-	Phone     string    `gorm:"type:varchar(15);not null" json:"phone"`
-	Name      string    `gorm:"type:varchar(100);not null" json:"name"`
-	Gender    string    `gorm:"type:varchar(100);not null" json:"gender"`
-	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	ID            uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	Phone         string    `gorm:"type:varchar(15);not null" json:"phone"`
+	Name          string    `gorm:"type:varchar(100);not null" json:"name"`
+	Gender        string    `gorm:"type:varchar(100);not null" json:"gender"`
+	TermsAccepted bool      `gorm:"default:false" json:"terms_accepted"`
+	CreatedAt     time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt     time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+type TermsAndConditions struct {
+	ID         uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	Version    string    `gorm:"type:varchar(50);not null" json:"version"`
+	AcceptedOn time.Time `gorm:"autoCreateTime" json:"accepted_on"`
+	UserID     uint      `gorm:"not null" json:"user_id"`
 }
 
 type Preference struct {
