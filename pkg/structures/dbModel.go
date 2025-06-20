@@ -459,3 +459,31 @@ type CustomerRequest struct {
 	RequestType string    `gorm:"type:varchar(50);not null" json:"request_type"`
 	RequestedAt time.Time `gorm:"autoCreateTime" json:"requested_at"`
 }
+
+type CafeAdvertisement struct {
+	AdvertisementID string    `gorm:"primaryKey;type:varchar(100)" json:"advertisement_id"`
+	Title           string    `gorm:"type:varchar(255);not null" json:"title"`
+	Description     string    `gorm:"type:text" json:"description"`
+	ImageURL        string    `gorm:"type:varchar(255)" json:"image_url"`
+	VideoURL        string    `gorm:"type:varchar(255)" json:"video_url"`
+	CafeID          uint      `gorm:"not null" json:"cafe_id"`
+	AdStartTime     time.Time `gorm:"type:timestamp" json:"ad_start_time"`
+	AdEndTime       time.Time `gorm:"type:timestamp" json:"ad_end_time"`
+	EventStartTime  string    `gorm:"type:varchar(20)" json:"event_start_time"` // Time when the event is scheduled
+	EventEndTime    string    `gorm:"type:varchar(20)" json:"event_end_time"`
+	EventDate       string    `gorm:"type:varchar(20)" json:"event_date"`                          // Date when the event is scheduled
+	AdType          string    `gorm:"type:varchar(50);not null" json:"ad_type"`                    // e.g. "offer", "event", "popup"
+	AdStatus        string    `gorm:"type:varchar(20);not null;default:'active'" json:"ad_status"` // e.g. "active", "inactive"
+	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt       time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+type CafeAdvertisementClick struct {
+	ClickID         uint      `gorm:"primaryKey;autoIncrement" json:"click_id"`
+	AdvertisementID string    `gorm:"type:varchar(100);not null" json:"advertisement_id"`
+	UserID          uint      `gorm:"not null" json:"user_id"`
+	CafeID          uint      `gorm:"not null" json:"cafe_id"`
+	ClickedAt       time.Time `gorm:"autoCreateTime" json:"clicked_at"`
+	IsInterested    bool      `gorm:"default:false" json:"is_interested"`  // Indicates if the user is interested in the ad
+	ClickedCancel   bool      `gorm:"default:false" json:"clicked_cancel"` // Indicates if the user clicked cancel on the ad
+}

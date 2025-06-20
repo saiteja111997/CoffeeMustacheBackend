@@ -3,6 +3,7 @@ package server
 import (
 	"coffeeMustacheBackend/pkg/structures"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/segmentio/ksuid"
+	"gorm.io/gorm"
 )
 
 // PlaceOrder handles order creation
@@ -171,6 +173,15 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "session_id is required"})
 	}
 
+	// Get user ID from locals
+	userId := uint(c.Locals("userId").(float64))
+	if userId == 0 {
+		fmt.Println("User not authenticated")
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"error": "User not authenticated",
+		})
+	}
+
 	// 1) Fetch all orders for the session (payment pending/failed)
 	var orders []structures.Order
 	if err := s.Db.Where(
@@ -329,6 +340,49 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 	}
 
 	finalResponse["timestamp"] = finalTimeStamp
+
+	// Fetch Cafe id from sessions table using session ID
+	var sessionCafe struct {
+		CafeID uint
+	}
+	if err := s.Db.Model(&structures.Session{}).
+		Select("cafe_id").
+		Where("session_id = ?", req.SessionID).
+		Scan(&sessionCafe).Error; err != nil {
+		fmt.Println("Failed to fetch cafe ID:", err)
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to fetch cafe ID",
+		})
+	}
+	cafeID := sessionCafe.CafeID
+
+	// Calculate time.now in Asia/Kolkata timezone
+	location, err := time.LoadLocation("Asia/Kolkata")
+	if err != nil {
+		fmt.Println("Failed to load location:", err)
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to process time",
+		})
+	}
+
+	// Calculate the current time in the Asia/Kolkata timezone
+	currentTime := time.Now().In(location)
+
+	// Fetch if there is any advertisement for the cafe, where the current date is between start and end date
+	var advertisement structures.CafeAdvertisement
+	if err := s.Db.Where(
+		"cafe_id = ? AND ad_start_time <= ? AND ad_end_time >= ? AND ad_status = ?",
+		cafeID, currentTime, currentTime, "active",
+	).Order("created_at desc").First(&advertisement).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			fmt.Println("No advertisement found for the cafe")
+		} else {
+			fmt.Println("Failed to fetch advertisement:", err)
+		}
+	} else {
+		fmt.Println("Advertisement found for the cafe:", advertisement)
+		finalResponse["advertisement"] = advertisement
+	}
 
 	// 6) Return JSON
 	return c.Status(http.StatusOK).JSON(finalResponse)
