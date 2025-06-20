@@ -248,9 +248,14 @@ functions:
           method: GET
           cors: true
 
-  
+  RecordUserAdClick:
+    handler: bootstrap
+    events:
+      - http:
+          path: /recordUserAdClick
+          method: POST
+          cors: true
 
-  
 
   
 
