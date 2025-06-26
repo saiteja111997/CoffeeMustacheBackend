@@ -487,3 +487,12 @@ type CafeAdvertisementClick struct {
 	IsInterested    bool      `gorm:"default:false" json:"is_interested"`  // Indicates if the user is interested in the ad
 	ClickedCancel   bool      `gorm:"default:false" json:"clicked_cancel"` // Indicates if the user clicked cancel on the ad
 }
+
+type FcmToken struct {
+	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID    uint      `gorm:"not null" json:"user_id"`
+	Token     string    `gorm:"type:varchar(255);not null" json:"token"`
+	CafeID    uint      `gorm:"not null" json:"cafe_id"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}

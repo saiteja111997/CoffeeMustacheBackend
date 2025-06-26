@@ -1,6 +1,7 @@
 package server
 
 import (
+	"coffeeMustacheBackend/pkg/helper"
 	"coffeeMustacheBackend/pkg/structures"
 	"fmt"
 	"net/http"
@@ -51,6 +52,30 @@ func (s *Server) CallWaiter(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{
 			"error": "Failed to save customer request",
 		})
+	}
+
+	// Send a push notification by fetching device tokens from fcm_tokens table based on cafe id
+	var deviceTokens []string
+	if err := s.Db.Model(&structures.FcmToken{}).
+		Where("cafe_id = ?", request.CafeID).
+		Pluck("token", &deviceTokens).Error; err != nil {
+		fmt.Println("Failed to fetch device tokens:", err)
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to fetch device tokens",
+		})
+	}
+
+	body := fmt.Sprintf("%s request from Table No: %s", request.RequestType, request.TableNumber)
+
+	if len(deviceTokens) > 0 {
+		if err := helper.SendPushNotification(deviceTokens, "Customer Request", body); err != nil {
+			fmt.Println("Failed to send push notification:", err)
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to send push notification",
+			})
+		}
+	} else {
+		fmt.Println("No device tokens found for the cafe")
 	}
 
 	return c.Status(http.StatusOK).JSON(fiber.Map{

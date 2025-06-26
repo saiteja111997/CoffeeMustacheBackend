@@ -1,6 +1,7 @@
 package server
 
 import (
+	"coffeeMustacheBackend/pkg/helper"
 	"coffeeMustacheBackend/pkg/structures"
 	"encoding/json"
 	"errors"
@@ -157,6 +158,32 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 			"error": "Failed to update cart or cart items status",
 		})
 	}
+
+	// Send a push notification by fetching device tokens from fcm_tokens table based on cafe id
+	var deviceTokens []string
+	if err := s.Db.Model(&structures.FcmToken{}).
+		Where("cafe_id = ?", req.CafeID).
+		Pluck("token", &deviceTokens).Error; err != nil {
+		fmt.Println("Failed to fetch device tokens:", err)
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to fetch device tokens",
+		})
+	}
+
+	body := fmt.Sprintf("New order received for Table No: %s", session.TableName)
+
+	if len(deviceTokens) > 0 {
+		if err := helper.SendPushNotification(deviceTokens, "Order Update", body); err != nil {
+			fmt.Println("Failed to send push notification:", err)
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to send push notification",
+			})
+		}
+	} else {
+		fmt.Println("No device tokens found for the cafe")
+	}
+
+	fmt.Println("Order placed successfully with ID:", orderID)
 
 	// Return the generated order ID
 	return c.Status(http.StatusOK).JSON(structures.PlaceOrderResponse{
