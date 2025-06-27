@@ -57,6 +57,7 @@ type PlaceOrderRequest struct {
 // PlaceOrderResponse represents the response payload
 type PlaceOrderResponse struct {
 	OrderID string `json:"order_id"`
+	Rewards uint   `json:"rewards"` // Assuming rewards is a uint, adjust as necessary
 }
 
 // Build final
