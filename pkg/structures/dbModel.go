@@ -499,11 +499,11 @@ type FcmToken struct {
 
 type RewardTransaction struct {
 	ID              uint       `gorm:"primaryKey;autoIncrement" json:"id"`
-	UserID          uint       `gorm:"type:uuid;not null" json:"user_id"`
+	UserID          uint       `gorm:"not null" json:"user_id"`
 	CafeID          uint       `gorm:"not null" json:"cafe_id"`
 	SessionID       string     `gorm:"type:varchar(100);not null" json:"session_id"`
 	TransactionType string     `gorm:"type:varchar(20);not null;check:transaction_type IN ('credited','redeemed','expired')" json:"transaction_type"`
-	Mustaches       uint       `gorm:"not null;check:mustaches > 0" json:"mustaches"`
+	Mustaches       uint       `gorm:"not null;default:0" json:"mustaches"`
 	EarnedDate      *time.Time `gorm:"type:timestamp" json:"earned_date"` // only for credits
 	SpentDate       *time.Time `gorm:"type:timestamp" json:"spent_date"`  // only for redemptions
 	CreatedAt       time.Time  `gorm:"autoCreateTime" json:"created_at"`
