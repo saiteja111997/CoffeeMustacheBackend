@@ -256,6 +256,14 @@ functions:
           method: POST
           cors: true
 
+  GetProfile:
+    handler: bootstrap
+    events:
+      - http:
+          path: /getProfile
+          method: GET
+          cors: true
+
 
   
 

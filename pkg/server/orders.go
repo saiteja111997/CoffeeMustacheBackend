@@ -159,6 +159,34 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 		})
 	}
 
+	// Get the cart total from cart table based on cart id
+	var cart structures.Cart
+	if err := s.Db.Where("cart_id = ?", req.CartID).First(&cart).Error; err != nil {
+		fmt.Println("Failed to fetch cart details:", err)
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to fetch cart details",
+		})
+	}
+
+	// Divide the total amount by 50 and get the number of loyalty points
+	loyaltyPoints := uint(cart.TotalAmount / 50)
+
+	// Update the reward_transactions table with the earned loyalty points for the user
+	earnedDate := time.Now().In(location).Truncate(time.Second) // Use Asia/Kolkata timezone
+	if err := s.Db.Create(&structures.RewardTransaction{
+		UserID:          userId,
+		CafeID:          req.CafeID,
+		SessionID:       req.SessionID,
+		TransactionType: "credited",
+		Mustaches:       loyaltyPoints,
+		EarnedDate:      &earnedDate,
+	}).Error; err != nil {
+		fmt.Println("Failed to update reward transactions:", err)
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to update reward transactions",
+		})
+	}
+
 	// Send a push notification by fetching device tokens from fcm_tokens table based on cafe id
 	var deviceTokens []string
 	if err := s.Db.Model(&structures.FcmToken{}).
@@ -188,6 +216,7 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 	// Return the generated order ID
 	return c.Status(http.StatusOK).JSON(structures.PlaceOrderResponse{
 		OrderID: orderID,
+		Rewards: loyaltyPoints, // Return the earned loyalty points
 	})
 }
 

@@ -156,7 +156,7 @@ func main() {
 	}
 
 	db = db.Debug()
-	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.CuratedCart{}, &structures.CuratedCartItem{}, &structures.Session{}, &structures.UserSession{}, &structures.Cart{}, &structures.CartItem{}, &structures.Order{}, &structures.Order{}, &structures.UpdateCartResult{}, &structures.MenuAIRecords{}, &structures.Discount{}, &structures.Cafe{}, &structures.ItemFeedback{}, &structures.CafeFeedback{}, &structures.CustomerRequest{}, &structures.TermsAndConditions{}, &structures.CafeAdvertisementClick{})
+	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.CuratedCart{}, &structures.CuratedCartItem{}, &structures.Session{}, &structures.UserSession{}, &structures.Cart{}, &structures.CartItem{}, &structures.Order{}, &structures.Order{}, &structures.UpdateCartResult{}, &structures.MenuAIRecords{}, &structures.Discount{}, &structures.Cafe{}, &structures.ItemFeedback{}, &structures.CafeFeedback{}, &structures.CustomerRequest{}, &structures.TermsAndConditions{}, &structures.CafeAdvertisementClick{}, &structures.RewardTransaction{})
 	fmt.Println("Auto migration done!!")
 
 	defer db.Close()
@@ -207,6 +207,7 @@ func main() {
 	app.Post("/addSpecialRequest", ExtractJWT, svr.AddSpecialRequest)
 	app.Get("/acceptTermsAndConditions", ExtractJWT, svr.AcceptTermsAndConditions)
 	app.Post("/recordUserAdClick", ExtractJWT, svr.RecordUserAdClick)
+	app.Get("/getProfile", ExtractJWT, svr.GetProfile)
 
 	fmt.Println("Routing established!!")
 
