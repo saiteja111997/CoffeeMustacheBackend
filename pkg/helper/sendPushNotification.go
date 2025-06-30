@@ -37,8 +37,8 @@ func SendPushNotification(deviceTokens []string, title, body string) error {
 	for _, token := range deviceTokens {
 		response, err := fcmClient.Send(context.Background(), &messaging.Message{
 			Notification: &messaging.Notification{
-				Title: "Congratulations!!",
-				Body:  "You have just implement push notification",
+				Title: title,
+				Body:  body,
 			},
 			Token: token,
 		})
