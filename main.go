@@ -109,10 +109,14 @@ func ExtractJWT(c *fiber.Ctx) error {
 
 	// Example: Extract user phone number from claims
 	userId := claims["user_id"].(float64)
+	cafeId := claims["cafe_id"].(float64)
+	tableName := claims["table_name"].(string)
 	fmt.Println("User ID extracted from token: ", userId)
 
 	// Store phone number in context for further use
 	c.Locals("userId", userId)
+	c.Locals("cafeId", cafeId)
+	c.Locals("tableName", tableName)
 
 	// Proceed to next handler
 	return c.Next()
@@ -156,7 +160,7 @@ func main() {
 	}
 
 	db = db.Debug()
-	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.CuratedCart{}, &structures.CuratedCartItem{}, &structures.Session{}, &structures.UserSession{}, &structures.Cart{}, &structures.CartItem{}, &structures.Order{}, &structures.Order{}, &structures.UpdateCartResult{}, &structures.MenuAIRecords{}, &structures.Discount{}, &structures.Cafe{}, &structures.ItemFeedback{}, &structures.CafeFeedback{}, &structures.CustomerRequest{}, &structures.TermsAndConditions{}, &structures.CafeAdvertisementClick{}, &structures.RewardTransaction{})
+	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.CuratedCart{}, &structures.CuratedCartItem{}, &structures.Session{}, &structures.UserSession{}, &structures.Cart{}, &structures.CartItem{}, &structures.Order{}, &structures.Order{}, &structures.UpdateCartResult{}, &structures.MenuAIRecords{}, &structures.Discount{}, &structures.Cafe{}, &structures.ItemFeedback{}, &structures.CafeFeedback{}, &structures.CustomerRequest{}, &structures.TermsAndConditions{}, &structures.CafeAdvertisementClick{}, &structures.RewardTransaction{}, &structures.UpsellData{})
 	fmt.Println("Auto migration done!!")
 
 	defer db.Close()
@@ -180,6 +184,7 @@ func main() {
 	app.Get("/ping", svr.HealthCheck)
 	// Apply JWT middleware to protected routes
 	app.Post("/getCafeDetails", ExtractJWT, svr.GetCafeDetails)
+	app.Get("/getSessionDetails", ExtractJWT, svr.GetSessionDetails)
 	app.Post("/upsellItem", ExtractJWT, svr.UpsellItem)
 	app.Post("/getUpsellAndCrossSell", ExtractJWT, svr.GetUpsellAndCrossSell)
 	app.Post("/askMenuAI", ExtractJWT, svr.AskMenuAI)
@@ -199,6 +204,7 @@ func main() {
 	app.Post("/upgradeCart", ExtractJWT, svr.UpgradeCart)
 	app.Post("/getItemAudio", ExtractJWT, svr.GetItemAudio)
 	app.Post("/placeOrder", ExtractJWT, svr.PlaceOrder)
+	app.Post("/getUpsellData", ExtractJWT, svr.GetUpsellData)
 	app.Post("/fetchOrderDetails", ExtractJWT, svr.FetchOrderDetails)
 	app.Post("/invalidateSession", ExtractJWT, svr.InvalidateSession)
 	app.Post("/getFeedbackForm", ExtractJWT, svr.GetFeedbackForm)

@@ -264,6 +264,22 @@ functions:
           method: GET
           cors: true
 
+  GetUpsellData:
+    handler: bootstrap
+    events:
+      - http:
+          path: /getUpsellData
+          method: POST
+          cors: true
+
+  GetSessionDetails:
+    handler: bootstrap
+    events:
+      - http:
+          path: /getSessionDetails
+          method: GET
+          cors: true
+
 
   
 

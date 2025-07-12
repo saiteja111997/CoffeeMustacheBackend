@@ -429,6 +429,7 @@ type Cafe struct {
 	ClosingTime  time.Time      `gorm:"type:time" json:"closing_time"`
 	Rating       float64        `gorm:"default:0.0" json:"rating"`
 	ImageURL     string         `gorm:"type:varchar(255)" json:"image_url"`
+	Complete_Pos bool           `gorm:"default:false" json:"complete_pos"` // Indicates if the cafe has a complete POS setup
 	TotalRatings uint           `gorm:"default:0" json:"total_ratings"`
 	CreatedAt    time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt    time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
@@ -508,4 +509,16 @@ type RewardTransaction struct {
 	SpentDate       *time.Time `gorm:"type:timestamp" json:"spent_date"`  // only for redemptions
 	CreatedAt       time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt       time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+type UpsellData struct {
+	UpsellID        string    `gorm:"type:varchar(100);primaryKey" json:"upsell_id"`
+	CartID          string    `gorm:"type:varchar(100);not null" json:"cart_id"`
+	CafeID          uint      `gorm:"not null" json:"cafe_id"`
+	CurrentAmount   float64   `gorm:"type:decimal(10,2);not null" json:"current_amount"`
+	TargetAmount    float64   `gorm:"type:decimal(10,2);not null" json:"target_amount"`
+	OfferAccepted   bool      `gorm:"default:false" json:"offer_accepted"` // Indicates if the upsell offer was accepted
+	MustachesToGive uint      `gorm:"not null" json:"mustaches_to_give"`
+	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt       time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
