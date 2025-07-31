@@ -52,7 +52,7 @@ func (s *Server) UpgradeCart(c *fiber.Ctx) error {
 	}
 
 	// If cafe id is not found throw error
-	if req.CafeID == 0 {
+	if req.CafeID < 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "cafe_id is required",
 		})

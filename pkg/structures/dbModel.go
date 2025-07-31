@@ -195,6 +195,7 @@ type MenuItem struct {
 	ID               uint           `gorm:"primaryKey;autoIncrement" json:"id"`
 	CafeID           uint           `gorm:"not null" json:"cafe_id"`
 	Category         string         `gorm:"type:varchar(50);not null" json:"category"`
+	CategoryID       uint           `gorm:"type:int" json:"category_id"` // Foreign key to Category table
 	Name             string         `gorm:"type:varchar(100);not null" json:"name"`
 	Description      string         `gorm:"type:text" json:"description"`
 	ShortDescription string         `gorm:"type:varchar(255)" json:"short_description"`
@@ -277,6 +278,7 @@ type CuratedCartItem struct {
 type Session struct {
 	SessionID       string        `gorm:"primaryKey;type:varchar(100)" json:"session_id"`
 	TableName       string        `gorm:"type:varchar(100);not null" json:"table_name"`
+	TableCode       string        `gorm:"type:varchar(100)" json:"table_code"`
 	CafeID          uint          `gorm:"not null" json:"cafe_id"`
 	SessionStatus   SessionStatus `gorm:"type:varchar(50);not null" json:"session_status"`
 	StartTime       time.Time     `json:"start_time"`
@@ -351,6 +353,7 @@ type Order struct {
 	IsClicked      bool          `gorm:"default:false" json:"is_clicked"`
 	TotalAmount    float64       `gorm:"type:decimal(10,2)" json:"total_amount"`
 	OrderTime      time.Time     `gorm:"autoCreateTime" json:"order_time"`
+	IsMessageSent  bool          `gorm:"default:false" json:"is_message_sent"` // Indicates if a message has been sent to the user
 	CompletedTime  *time.Time    `json:"completed_time,omitempty"`
 }
 
@@ -429,6 +432,7 @@ type Cafe struct {
 	ClosingTime  time.Time      `gorm:"type:time" json:"closing_time"`
 	Rating       float64        `gorm:"default:0.0" json:"rating"`
 	ImageURL     string         `gorm:"type:varchar(255)" json:"image_url"`
+	CompletePos  bool           `gorm:"default:false" json:"complete_pos"` // Indicates if the cafe has a complete POS setup
 	TotalRatings uint           `gorm:"default:0" json:"total_ratings"`
 	CreatedAt    time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt    time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
@@ -508,4 +512,49 @@ type RewardTransaction struct {
 	SpentDate       *time.Time `gorm:"type:timestamp" json:"spent_date"`  // only for redemptions
 	CreatedAt       time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt       time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+type UpsellData struct {
+	UpsellID        string    `gorm:"type:varchar(100);primaryKey" json:"upsell_id"`
+	CartID          string    `gorm:"type:varchar(100);not null" json:"cart_id"`
+	CafeID          uint      `gorm:"not null" json:"cafe_id"`
+	CurrentAmount   float64   `gorm:"type:decimal(10,2);not null" json:"current_amount"`
+	TargetAmount    float64   `gorm:"type:decimal(10,2);not null" json:"target_amount"`
+	OfferAccepted   bool      `gorm:"default:false" json:"offer_accepted"` // Indicates if the upsell offer was accepted
+	MustachesToGive uint      `gorm:"not null" json:"mustaches_to_give"`
+	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt       time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+type ItemFavorite struct {
+	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	UserID    uint      `gorm:"not null" json:"user_id"`
+	ItemID    uint      `gorm:"not null" json:"item_id"`
+	CafeID    uint      `gorm:"not null" json:"cafe_id"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+type Category struct {
+	ID          uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	Name        string    `gorm:"type:varchar(100);not null" json:"name"`
+	Description string    `gorm:"type:text" json:"description"`
+	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	CafeID      uint      `gorm:"not null" json:"cafe_id"`
+	Counter     uint      `gorm:"default:0" json:"counter"`
+}
+
+type AdminUser struct {
+	ID          uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	PhoneNumber string    `gorm:"type:varchar(20);not null" json:"phone_number"`
+	Name        string    `gorm:"type:varchar(100);not null" json:"name"`
+	Designation string    `gorm:"type:varchar(100);not null" json:"designation"`
+	Role        string    `gorm:"type:varchar(100);not null" json:"role"`
+	JoinedAt    time.Time `gorm:"autoCreateTime" json:"joined_at"`
+	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	CafeID      uint      `gorm:"not null" json:"cafe_id"`
+	CafeCode    string    `gorm:"type:varchar(100);not null" json:"cafe_code"`
+	AddedBy     uint      `gorm:"column:added_by" json:"added_by"`
+	Status      string    `gorm:"type:varchar(20);not null;default:'active'" json:"status"` // e.g. "active"/"inactive"
 }

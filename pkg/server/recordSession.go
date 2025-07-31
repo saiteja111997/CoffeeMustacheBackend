@@ -36,16 +36,45 @@ func (s *Server) RecordUserSession(c *fiber.Ctx) error {
 
 	status := true
 
+	// Check if the cafe has a complete_pos true or false
+	var cafe structures.Cafe
+	if err := s.Db.Where("id = ?", req.CafeId).First(&cafe).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Cafe not found",
+		})
+	}
+
+	if !cafe.CompletePos {
+		// Get session details from the session table
+		var session structures.Session
+		if err := s.Db.Where("table_name = ? AND cafe_id = ? AND session_status = ?", req.TableId, req.CafeId, structures.Active).First(&session).Error; err != nil {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "Session not found",
+			})
+		}
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message":    "User session recorded successfully",
+			"session_id": session.SessionID,
+			"user_id":    userId,
+			"status":     status,
+		})
+	}
+
 	// Check if there is an active session for the given table
 	var session structures.Session
 	if err := s.Db.Where("table_name = ? AND session_status = ?", req.TableId, "Active").First(&session).Error; err != nil {
 		// If no active session, create a new session with a unique session ID using ksuid
+
+		// Generate a random 4-digit numeric code for the table
+		tableCode := fmt.Sprintf("%04d", time.Now().UnixNano()%10000)
 
 		// if record not found create a new session
 		if err.Error() == "record not found" {
 			newSession := structures.Session{
 				SessionID:     ksuid.New().String(),
 				TableName:     req.TableId,
+				TableCode:     tableCode,
 				CafeID:        req.CafeId,
 				SessionStatus: structures.Active,
 				StartTime:     time.Now(),
@@ -73,6 +102,7 @@ func (s *Server) RecordUserSession(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message":    "User session recorded successfully",
 		"session_id": session.SessionID,
+		"table_code": session.TableCode,
 		"user_id":    userId,
 		"status":     status,
 	})
@@ -151,5 +181,36 @@ func (s *Server) CheckSessionStatus(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"session_status": true,
 		"session_id":     session.SessionID,
+	})
+}
+
+func (s *Server) VerifyTableCode(c *fiber.Ctx) error {
+	type VerifyTableCodeRequest struct {
+		TableCode string `json:"table_code"`
+		SessionID string `json:"session_id"`
+	}
+
+	var req VerifyTableCodeRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid input",
+		})
+	}
+
+	var session structures.Session
+	if err := s.Db.Where("session_id = ? AND table_code = ? AND session_status = ?", req.SessionID, req.TableCode, structures.Active).First(&session).Error; err != nil {
+		if err.Error() == "record not found" {
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "Invalid table code or session ID",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to verify table code",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Table code verified successfully",
+		"table":   session.TableCode,
 	})
 }

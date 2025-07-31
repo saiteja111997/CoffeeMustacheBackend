@@ -264,7 +264,34 @@ functions:
           method: GET
           cors: true
 
+  GetUpsellData:
+    handler: bootstrap
+    events:
+      - http:
+          path: /getUpsellData
+          method: POST
+          cors: true
 
-  
+  AddFavouriteItem:
+    handler: bootstrap
+    events:
+      - http:
+          path: /addFavouriteItem
+          method: POST
+          cors: true
 
-  
+  GetPersonalisedData:
+    handler: bootstrap
+    events:
+      - http:
+          path: /getPersonalisedData
+          method: GET
+          cors: true
+
+  VerifyTableCode:
+    handler: bootstrap
+    events:
+      - http:
+          path: /verifyTableCode
+          method: POST
+          cors: true

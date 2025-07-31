@@ -168,8 +168,38 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 		})
 	}
 
-	// Divide the total amount by 50 and get the number of loyalty points
-	loyaltyPoints := uint(cart.TotalAmount / 50)
+	var loyaltyPoints uint
+
+	// Get upsell_data entry for the given cart ID
+	var upsellData structures.UpsellData
+	if err := s.Db.Where("cart_id = ?", req.CartID).First(&upsellData).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			fmt.Println("No upsell data found for the cart")
+		} else {
+			fmt.Println("Failed to fetch upsell data:", err)
+		}
+	} else {
+		if cart.TotalAmount >= upsellData.TargetAmount {
+			// If the cart total is greater than or equal to the target amount, add the mustaches to the loyalty points
+			loyaltyPoints = upsellData.MustachesToGive
+			fmt.Println("Loyalty points earned from upsell data:", loyaltyPoints)
+
+			// Update OfferAccepted to true in upsell_data table
+			if err := s.Db.Model(&structures.UpsellData{}).
+				Where("cart_id = ?", req.CartID).
+				Update("offer_accepted", true).Error; err != nil {
+				fmt.Println("Failed to update upsell data:", err)
+				return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+					"error": "Failed to update upsell data",
+				})
+			}
+			fmt.Println("Upsell data updated successfully")
+
+		} else {
+			fmt.Println("Cart total is less than the target amount for upsell data")
+			loyaltyPoints = uint(cart.TotalAmount / 50)
+		}
+	}
 
 	// Update the reward_transactions table with the earned loyalty points for the user
 	earnedDate := time.Now().In(location).Truncate(time.Second) // Use Asia/Kolkata timezone
@@ -238,13 +268,48 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 		})
 	}
 
+	cafeID := uint(c.Locals("cafeId").(float64))
+
+	// GEt current time in Asia/Kolkata timezone
+	location, err := time.LoadLocation("Asia/Kolkata")
+	if err != nil {
+		fmt.Println("Failed to load location:", err)
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to process time",
+		})
+	}
+
+	currentTime := time.Now().In(location).Truncate(time.Second) // Use Asia/Kolkata timezone
+
+	// Get Start time of the day in Asia/Kolkata timezone
+	startOfDay := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, 0, location)
+
+	// Get complete_pos status for the cafe
+	var cafe structures.Cafe
+	if err := s.Db.Where("id = ?", cafeID).First(&cafe).Error; err != nil {
+		fmt.Println("Failed to fetch cafe details:", err)
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to fetch cafe details",
+		})
+	}
+
 	// 1) Fetch all orders for the session (payment pending/failed)
 	var orders []structures.Order
-	if err := s.Db.Where(
-		"session_id = ? AND (payment_status = ? OR payment_status = ?) AND order_status != ?",
-		req.SessionID, "Pending", "Failed", structures.OrderCancelled,
-	).Find(&orders).Error; err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch orders"})
+
+	if cafe.CompletePos {
+		if err := s.Db.Where(
+			"session_id = ? AND (payment_status = ? OR payment_status = ?) AND order_status != ?",
+			req.SessionID, "Pending", "Failed", structures.OrderCancelled,
+		).Find(&orders).Error; err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch orders"})
+		}
+	} else {
+		if err := s.Db.Where(
+			"session_id = ? AND (payment_status = ? OR payment_status = ?) AND order_status != ? AND user_id = ? AND order_time > ?",
+			req.SessionID, "Pending", "Failed", structures.OrderCancelled, userId, startOfDay,
+		).Find(&orders).Error; err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to fetch orders"})
+		}
 	}
 
 	fmt.Println("Length of the orders:", len(orders))
@@ -343,14 +408,18 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 			})
 		}
 
+		// First convert order time to Asia/Kolkata timezone
+		order.OrderTime = order.OrderTime.In(location)
+
 		// Build an OrderResponse
 		response := structures.OrderResponse{
-			OrderID:     order.OrderID,
-			CartID:      order.CartID,
-			CartItems:   cartItemDetails,
-			OrderedAt:   order.OrderTime,
-			Discount:    discount.DiscountValue,
-			TotalAmount: order.TotalAmount,
+			OrderID:            order.OrderID,
+			CartID:             order.CartID,
+			CartItems:          cartItemDetails,
+			OrderedAt:          order.OrderTime,
+			Discount:           discount.DiscountValue,
+			TotalAmount:        order.TotalAmount,
+			OrderTimeFormatted: order.OrderTime.Format("03:04 PM"), // Only time in am/pm format
 		}
 
 		results[order.UserID] = append(results[order.UserID], response)
@@ -360,11 +429,13 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 	// e.g. you might want an array of objects:
 	// [{ user_name: 'Alice', orders: [...] }, ...]
 
-	var finalResponse = make(map[string]interface{})
+	var userSummaries []structures.UserOrderSummary
 	var finalTimeStamp time.Time
+	var cumilative_order_total float64
 
 	for userID, userOrders := range results {
 		if len(userOrders) == 0 {
+			fmt.Println("No orders found for user ID:", userID)
 			continue
 		}
 
@@ -379,7 +450,6 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 		var totalDiscount float64
 
 		for _, userOrder := range userOrders {
-			// calculate the latest timestamp
 			if userOrder.OrderedAt.After(finalTimeStamp) {
 				finalTimeStamp = userOrder.OrderedAt
 			}
@@ -387,44 +457,26 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 			totalDiscount += userOrder.Discount
 		}
 
-		finalResponse[user.Name] = structures.FinalResponse{
-			UserID:               userID,
-			CumilativeOrderTotal: totalAmount,
-			Discount:             totalDiscount,
-			Orders:               userOrders,
+		userSummary := structures.UserOrderSummary{
+			UserID:   userID,
+			UserName: user.Name,
+			Total:    totalAmount,
+			Discount: totalDiscount,
+			Orders:   userOrders,
 		}
+
+		userSummaries = append(userSummaries, userSummary)
+		cumilative_order_total += totalAmount
 	}
 
-	finalResponse["timestamp"] = finalTimeStamp
-
-	// Fetch Cafe id from sessions table using session ID
-	var sessionCafe struct {
-		CafeID uint
-	}
-	if err := s.Db.Model(&structures.Session{}).
-		Select("cafe_id").
-		Where("session_id = ?", req.SessionID).
-		Scan(&sessionCafe).Error; err != nil {
-		fmt.Println("Failed to fetch cafe ID:", err)
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch cafe ID",
-		})
-	}
-	cafeID := sessionCafe.CafeID
-
-	// Calculate time.now in Asia/Kolkata timezone
-	location, err := time.LoadLocation("Asia/Kolkata")
-	if err != nil {
-		fmt.Println("Failed to load location:", err)
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to process time",
-		})
+	// Prepare final response
+	finalResponse := structures.FinalResponse{
+		Timestamp:            finalTimeStamp,
+		Users:                userSummaries,
+		CumilativeOrderTotal: cumilative_order_total,
 	}
 
-	// Calculate the current time in the Asia/Kolkata timezone
-	currentTime := time.Now().In(location)
-
-	// Fetch if there is any advertisement for the cafe, where the current date is between start and end date
+	// Fetch advertisement for the cafe
 	var advertisement structures.CafeAdvertisement
 	if err := s.Db.Where(
 		"cafe_id = ? AND ad_start_time <= ? AND ad_end_time >= ? AND ad_status = ?",
@@ -437,9 +489,9 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 		}
 	} else {
 		fmt.Println("Advertisement found for the cafe:", advertisement)
-		finalResponse["advertisement"] = advertisement
+		finalResponse.Advertisement = &advertisement
 	}
 
-	// 6) Return JSON
+	// 6 Return JSON
 	return c.Status(http.StatusOK).JSON(finalResponse)
 }
