@@ -296,7 +296,7 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 	// 1) Fetch all orders for the session (payment pending/failed)
 	var orders []structures.Order
 
-	if cafe.Complete_Pos {
+	if cafe.CompletePos {
 		if err := s.Db.Where(
 			"session_id = ? AND (payment_status = ? OR payment_status = ?) AND order_status != ?",
 			req.SessionID, "Pending", "Failed", structures.OrderCancelled,
@@ -408,14 +408,18 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 			})
 		}
 
+		// First convert order time to Asia/Kolkata timezone
+		order.OrderTime = order.OrderTime.In(location)
+
 		// Build an OrderResponse
 		response := structures.OrderResponse{
-			OrderID:     order.OrderID,
-			CartID:      order.CartID,
-			CartItems:   cartItemDetails,
-			OrderedAt:   order.OrderTime,
-			Discount:    discount.DiscountValue,
-			TotalAmount: order.TotalAmount,
+			OrderID:            order.OrderID,
+			CartID:             order.CartID,
+			CartItems:          cartItemDetails,
+			OrderedAt:          order.OrderTime,
+			Discount:           discount.DiscountValue,
+			TotalAmount:        order.TotalAmount,
+			OrderTimeFormatted: order.OrderTime.Format("03:04 PM"), // Only time in am/pm format
 		}
 
 		results[order.UserID] = append(results[order.UserID], response)
@@ -425,11 +429,13 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 	// e.g. you might want an array of objects:
 	// [{ user_name: 'Alice', orders: [...] }, ...]
 
-	var finalResponse = make(map[string]interface{})
+	var userSummaries []structures.UserOrderSummary
 	var finalTimeStamp time.Time
+	var cumilative_order_total float64
 
 	for userID, userOrders := range results {
 		if len(userOrders) == 0 {
+			fmt.Println("No orders found for user ID:", userID)
 			continue
 		}
 
@@ -444,7 +450,6 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 		var totalDiscount float64
 
 		for _, userOrder := range userOrders {
-			// calculate the latest timestamp
 			if userOrder.OrderedAt.After(finalTimeStamp) {
 				finalTimeStamp = userOrder.OrderedAt
 			}
@@ -452,32 +457,26 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 			totalDiscount += userOrder.Discount
 		}
 
-		finalResponse[user.Name] = structures.FinalResponse{
-			UserID:               userID,
-			CumilativeOrderTotal: totalAmount,
-			Discount:             totalDiscount,
-			Orders:               userOrders,
+		userSummary := structures.UserOrderSummary{
+			UserID:   userID,
+			UserName: user.Name,
+			Total:    totalAmount,
+			Discount: totalDiscount,
+			Orders:   userOrders,
 		}
+
+		userSummaries = append(userSummaries, userSummary)
+		cumilative_order_total += totalAmount
 	}
 
-	finalResponse["timestamp"] = finalTimeStamp
+	// Prepare final response
+	finalResponse := structures.FinalResponse{
+		Timestamp:            finalTimeStamp,
+		Users:                userSummaries,
+		CumilativeOrderTotal: cumilative_order_total,
+	}
 
-	// Fetch Cafe id from sessions table using session ID
-	// var sessionCafe struct {
-	// 	CafeID uint
-	// }
-	// if err := s.Db.Model(&structures.Session{}).
-	// 	Select("cafe_id").
-	// 	Where("session_id = ?", req.SessionID).
-	// 	Scan(&sessionCafe).Error; err != nil {
-	// 	fmt.Println("Failed to fetch cafe ID:", err)
-	// 	return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
-	// 		"error": "Failed to fetch cafe ID",
-	// 	})
-	// }
-	// cafeID := sessionCafe.CafeID
-
-	// Fetch if there is any advertisement for the cafe, where the current date is between start and end date
+	// Fetch advertisement for the cafe
 	var advertisement structures.CafeAdvertisement
 	if err := s.Db.Where(
 		"cafe_id = ? AND ad_start_time <= ? AND ad_end_time >= ? AND ad_status = ?",
@@ -490,9 +489,9 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 		}
 	} else {
 		fmt.Println("Advertisement found for the cafe:", advertisement)
-		finalResponse["advertisement"] = advertisement
+		finalResponse.Advertisement = &advertisement
 	}
 
-	// 6) Return JSON
+	// 6 Return JSON
 	return c.Status(http.StatusOK).JSON(finalResponse)
 }

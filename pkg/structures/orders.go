@@ -36,12 +36,13 @@ type CartItemDetail struct {
 
 // OrderResponse groups orders under a user
 type OrderResponse struct {
-	OrderID     string           `json:"order_id"`
-	CartID      string           `json:"cart_id"`
-	CartItems   []CartItemDetail `json:"cart_items"`
-	Discount    float64          `json:"discount"`
-	OrderedAt   time.Time        `json:"ordered_at"`
-	TotalAmount float64          `json:"total_amount"`
+	OrderID            string           `json:"order_id"`
+	CartID             string           `json:"cart_id"`
+	CartItems          []CartItemDetail `json:"cart_items"`
+	Discount           float64          `json:"discount"`
+	OrderedAt          time.Time        `json:"ordered_at"`
+	OrderTimeFormatted string           `json:"order_time_formatted"`
+	TotalAmount        float64          `json:"total_amount"`
 }
 
 // PlaceOrderRequest represents the request payload
@@ -63,9 +64,24 @@ type PlaceOrderResponse struct {
 // Build final
 // For each user ID in results, we know their name. We can either do a second pass
 // or rely on the fact that we stored userName in each OrderResponse.
+// type FinalResponse struct {
+// 	UserID               uint            `json:"user_id"`
+// 	CumilativeOrderTotal float64         `json:"cumilative_order_total"`
+// 	Discount             float64         `json:"discount"`
+// 	Orders               []OrderResponse `json:"orders"`
+// }
+
+type UserOrderSummary struct {
+	UserID   uint            `json:"user_id"`
+	UserName string          `json:"user_name"`
+	Total    float64         `json:"total"`
+	Discount float64         `json:"discount"`
+	Orders   []OrderResponse `json:"orders"`
+}
+
 type FinalResponse struct {
-	UserID               uint            `json:"user_id"`
-	CumilativeOrderTotal float64         `json:"cumilative_order_total"`
-	Discount             float64         `json:"discount"`
-	Orders               []OrderResponse `json:"orders"`
+	Timestamp            time.Time          `json:"timestamp"`
+	Users                []UserOrderSummary `json:"users"`
+	CumilativeOrderTotal float64            `json:"cumilative_order_total"`
+	Advertisement        *CafeAdvertisement `json:"advertisement,omitempty"`
 }

@@ -272,15 +272,26 @@ functions:
           method: POST
           cors: true
 
-  GetSessionDetails:
+  AddFavouriteItem:
     handler: bootstrap
     events:
       - http:
-          path: /getSessionDetails
+          path: /addFavouriteItem
+          method: POST
+          cors: true
+
+  GetPersonalisedData:
+    handler: bootstrap
+    events:
+      - http:
+          path: /getPersonalisedData
           method: GET
           cors: true
 
-
-  
-
-  
+  VerifyTableCode:
+    handler: bootstrap
+    events:
+      - http:
+          path: /verifyTableCode
+          method: POST
+          cors: true

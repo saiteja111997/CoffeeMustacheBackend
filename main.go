@@ -160,7 +160,7 @@ func main() {
 	}
 
 	db = db.Debug()
-	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.CuratedCart{}, &structures.CuratedCartItem{}, &structures.Session{}, &structures.UserSession{}, &structures.Cart{}, &structures.CartItem{}, &structures.Order{}, &structures.Order{}, &structures.UpdateCartResult{}, &structures.MenuAIRecords{}, &structures.Discount{}, &structures.Cafe{}, &structures.ItemFeedback{}, &structures.CafeFeedback{}, &structures.CustomerRequest{}, &structures.TermsAndConditions{}, &structures.CafeAdvertisementClick{}, &structures.RewardTransaction{}, &structures.UpsellData{})
+	db.AutoMigrate(&structures.User{}, &structures.Preference{}, &structures.MenuItem{}, &structures.ItemCustomization{}, &structures.CrossSell{}, &structures.CuratedCart{}, &structures.CuratedCartItem{}, &structures.Session{}, &structures.UserSession{}, &structures.Cart{}, &structures.CartItem{}, &structures.Order{}, &structures.Order{}, &structures.UpdateCartResult{}, &structures.MenuAIRecords{}, &structures.Discount{}, &structures.Cafe{}, &structures.ItemFeedback{}, &structures.CafeFeedback{}, &structures.CustomerRequest{}, &structures.TermsAndConditions{}, &structures.CafeAdvertisementClick{}, &structures.RewardTransaction{}, &structures.UpsellData{}, &structures.ItemFavorite{}, &structures.Category{})
 	fmt.Println("Auto migration done!!")
 
 	defer db.Close()
@@ -184,7 +184,6 @@ func main() {
 	app.Get("/ping", svr.HealthCheck)
 	// Apply JWT middleware to protected routes
 	app.Post("/getCafeDetails", ExtractJWT, svr.GetCafeDetails)
-	app.Get("/getSessionDetails", ExtractJWT, svr.GetSessionDetails)
 	app.Post("/upsellItem", ExtractJWT, svr.UpsellItem)
 	app.Post("/getUpsellAndCrossSell", ExtractJWT, svr.GetUpsellAndCrossSell)
 	app.Post("/askMenuAI", ExtractJWT, svr.AskMenuAI)
@@ -214,6 +213,10 @@ func main() {
 	app.Get("/acceptTermsAndConditions", ExtractJWT, svr.AcceptTermsAndConditions)
 	app.Post("/recordUserAdClick", ExtractJWT, svr.RecordUserAdClick)
 	app.Get("/getProfile", ExtractJWT, svr.GetProfile)
+	app.Post("/addFavouriteItem", ExtractJWT, svr.AddFavouriteItem)
+	// app.Get("/getFavouriteItems", ExtractJWT, svr.GetFavouriteItems)
+	app.Get("/getPersonalisedData", ExtractJWT, svr.GetPersonalisedData)
+	app.Post("/verifyTableCode", ExtractJWT, svr.VerifyTableCode)
 
 	fmt.Println("Routing established!!")
 

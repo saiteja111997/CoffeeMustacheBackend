@@ -131,6 +131,44 @@ func (s *Server) AddToCart(c *fiber.Ctx) error {
 			UpdatedAt:        time.Now(),
 		}
 
+		// Get category id from the menu items table.
+		var menuItem structures.MenuItem
+		if err := s.Db.Where("id = ?", item.ItemID).First(&menuItem).
+			Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+					"error": "Menu item not found",
+				})
+			}
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Database error",
+			})
+		}
+
+		// For the given item id, increment the category counter based on category id
+		if menuItem.CategoryID != 0 {
+			var category structures.Category
+			if err := s.Db.Where("id = ?", menuItem.CategoryID).First(&category).
+				Error; err != nil {
+				if err == gorm.ErrRecordNotFound {
+					return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+						"error": "Category not found",
+					})
+				}
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": "Database error",
+				})
+			}
+			category.Counter += 1
+			if err := s.Db.Model(&structures.Category{}).
+				Where("id = ?", category.ID).
+				Update("counter", category.Counter).Error; err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": "Failed to update category counter",
+				})
+			}
+		}
+
 		// If added via is UpgradeCartAi, get the latest upgrade data for the give cart id and update the user action field to "added"
 		if addedVia == structures.UpgradeCartAi {
 			var latestUpgrade structures.UpdateCartResult

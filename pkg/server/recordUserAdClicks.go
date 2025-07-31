@@ -22,9 +22,9 @@ func (s *Server) RecordUserAdClick(c *fiber.Ctx) error {
 	}
 
 	// Validate the request
-	if req.CafeID == 0 || req.AdvertisementID == "" {
+	if req.AdvertisementID == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Cafe ID and Advertisement ID are required",
+			"error": "Advertisement ID is required",
 		})
 	}
 
