@@ -15,8 +15,9 @@ func (s *Server) RecordUserSession(c *fiber.Ctx) error {
 
 	// Parse table ID from request body
 	type RecordSessionRequest struct {
-		TableId string `json:"table_id"`
-		CafeId  uint   `json:"cafe_id"`
+		TableId     string `json:"table_id"`
+		CafeId      uint   `json:"cafe_id"`
+		CompletePos bool   `json:"complete_pos"`
 	}
 
 	var req RecordSessionRequest
@@ -27,24 +28,24 @@ func (s *Server) RecordUserSession(c *fiber.Ctx) error {
 	}
 
 	// Check if the given table ID exists for given cafe ID
-	var table structures.Table
-	if err := s.Db.Where("name =? AND cafe_id =?", req.TableId, req.CafeId).First(&table).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Table not found",
-		})
-	}
+	// var table structures.Table
+	// if err := s.Db.Where("name =? AND cafe_id =?", req.TableId, req.CafeId).First(&table).Error; err != nil {
+	// 	return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+	// 		"error": "Table not found",
+	// 	})
+	// }
 
 	status := true
 
 	// Check if the cafe has a complete_pos true or false
-	var cafe structures.Cafe
-	if err := s.Db.Where("id = ?", req.CafeId).First(&cafe).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "Cafe not found",
-		})
-	}
+	// var cafe structures.Cafe
+	// if err := s.Db.Where("id = ?", req.CafeId).First(&cafe).Error; err != nil {
+	// 	return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+	// 		"error": "Cafe not found",
+	// 	})
+	// }
 
-	if !cafe.CompletePos {
+	if !req.CompletePos {
 		// Get session details from the session table
 		var session structures.Session
 		if err := s.Db.Where("table_name = ? AND cafe_id = ? AND session_status = ?", req.TableId, req.CafeId, structures.Active).First(&session).Error; err != nil {
