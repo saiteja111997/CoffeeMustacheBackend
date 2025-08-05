@@ -390,6 +390,7 @@ func (s *Server) FetchOrderDetails(c *fiber.Ctx) error {
 
 			cartItemDetails = append(cartItemDetails, structures.CartItemDetail{
 				ItemName:       item.Name,
+				ImageURL:       item.ImageURL,
 				CartItemID:     ci.CartItemID,
 				ItemID:         ci.ItemID,
 				Quantity:       ci.Quantity,
