@@ -25,6 +25,7 @@ type UserOrdersMap map[uint][]OrderResponse
 // CartItemDetail extends CartItem with parsed customizations
 type CartItemDetail struct {
 	ItemName       string          `json:"item_name"`
+	ImageURL       string          `json:"image_url"` // New field for image URL
 	CartItemID     string          `json:"cart_item_id"`
 	ItemID         uint            `json:"item_id"`
 	Quantity       int             `json:"quantity"`
