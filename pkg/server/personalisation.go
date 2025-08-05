@@ -83,7 +83,7 @@ func (s *Server) GetPersonalisedData(c *fiber.Ctx) error {
 	if ids, ok := setToIDs[repeatSet]; ok && len(ids) > 0 {
 		var repeatItems []ItemObject
 		err := s.Db.Table("menu_items").
-			Select("id, cafe_id, image_url, name, price").
+			Select("id, cafe_id, image_url, name, price, is_customizable").
 			Where("id IN (?)", ids).
 			Scan(&repeatItems).Error
 		if err == nil && len(repeatItems) > 0 {
@@ -103,7 +103,7 @@ func (s *Server) GetPersonalisedData(c *fiber.Ctx) error {
 	if err == nil && recentCartID != "" {
 		var recentItems []ItemObject
 		s.Db.Raw(`
-			SELECT mi.id, mi.cafe_id, mi.image_url, mi.name, mi.price
+			SELECT mi.id, mi.cafe_id, mi.image_url, mi.name, mi.price, mi.is_customizable
 			FROM cart_items ci
 			JOIN menu_items mi ON ci.item_id = mi.id
 			WHERE ci.cart_id = ? AND ci.status = 'Ordered'
@@ -117,7 +117,7 @@ func (s *Server) GetPersonalisedData(c *fiber.Ctx) error {
 	// STEP 3: Favorites
 	var favoriteItems []ItemObject
 	s.Db.Raw(`
-		SELECT mi.id, mi.cafe_id, mi.image_url, mi.name, mi.price
+		SELECT mi.id, mi.cafe_id, mi.image_url, mi.name, mi.price, mi.is_customizable
 		FROM item_favorites f
 		JOIN menu_items mi ON f.item_id = mi.id
 		WHERE f.user_id = ? AND f.cafe_id = ?
