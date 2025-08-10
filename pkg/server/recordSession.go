@@ -99,6 +99,19 @@ func (s *Server) RecordUserSession(c *fiber.Ctx) error {
 		}
 	}
 
+	if session.TableCode == "" {
+		// Generate a random 4-digit numeric code for the table
+		tableCode := fmt.Sprintf("%04d", time.Now().UnixNano()%10000)
+		session.TableCode = tableCode
+
+		// Update the session with the new table code
+		if err := s.Db.Model(&structures.Session{}).Where("session_id = ?", session.SessionID).Update("table_code", tableCode).Error; err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to update session with table code",
+			})
+		}
+	}
+
 	// Return success response
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message":    "User session recorded successfully",
