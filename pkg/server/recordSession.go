@@ -64,7 +64,7 @@ func (s *Server) RecordUserSession(c *fiber.Ctx) error {
 
 	// Check if there is an active session for the given table
 	var session structures.Session
-	if err := s.Db.Where("table_name = ? AND session_status = ?", req.TableId, "Active").First(&session).Error; err != nil {
+	if err := s.Db.Where("table_name = ? AND session_status = ? AND cafe_id = ?", req.TableId, "Active", req.CafeId).First(&session).Error; err != nil {
 		// If no active session, create a new session with a unique session ID using ksuid
 
 		// Generate a random 4-digit numeric code for the table
