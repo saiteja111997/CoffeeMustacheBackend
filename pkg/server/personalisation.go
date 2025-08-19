@@ -84,7 +84,7 @@ func (s *Server) GetPersonalisedData(c *fiber.Ctx) error {
 		var repeatItems []ItemObject
 		err := s.Db.Table("menu_items").
 			Select("id, cafe_id, image_url, name, price, is_customizable").
-			Where("id IN (?)", ids).
+			Where("id IN (?) AND (is_customizable IS NULL OR is_customizable = ?)", ids, false).
 			Scan(&repeatItems).Error
 		if err == nil && len(repeatItems) > 0 {
 			result["repeat_order"] = repeatItems
