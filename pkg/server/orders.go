@@ -64,6 +64,16 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 		})
 	}
 
+	// Check if the cart id already exists in the orders table, if yes just return success response
+	var existingOrder structures.Order
+	if err := s.Db.Where("cart_id = ?", req.CartID).First(&existingOrder).Error; err == nil {
+		// Cart ID already exists in orders table
+		return c.Status(http.StatusOK).JSON(fiber.Map{
+			"status": "Cart id already exists",
+			"data":   existingOrder,
+		})
+	}
+
 	// Generate a new Order ID using ksuid
 	orderID := ksuid.New().String()
 	fmt.Println("Printing Order ID", orderID)
