@@ -68,7 +68,7 @@ func (s *Server) CallWaiter(c *fiber.Ctx) error {
 	body := fmt.Sprintf("%s request from Table No: %s", request.RequestType, request.TableNumber)
 
 	if len(deviceTokens) > 0 {
-		if err := helper.SendPushNotification(deviceTokens, "Customer Request", body); err != nil {
+		if err := helper.SendExpoPushNotification(deviceTokens, "Customer Request", body, "/alerts/requests"); err != nil {
 			fmt.Println("Failed to send push notification:", err)
 			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to send push notification",

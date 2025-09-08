@@ -241,7 +241,7 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 	body := fmt.Sprintf("New order received for Table No: %s", session.TableName)
 
 	if len(deviceTokens) > 0 {
-		if err := helper.SendPushNotification(deviceTokens, "Order Update", body); err != nil {
+		if err := helper.SendExpoPushNotification(deviceTokens, "Order Update", body, "/alerts/orders"); err != nil {
 			fmt.Println("Failed to send push notification:", err)
 			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Failed to send push notification",
