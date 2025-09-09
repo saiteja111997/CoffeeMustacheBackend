@@ -12,7 +12,6 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
-	"github.com/joho/godotenv"
 	"google.golang.org/api/option"
 )
 
@@ -111,10 +110,6 @@ func SendExpoPushNotification(deviceTokens []string, title, body, url string) er
 }
 
 func getDecodedFireBaseKey() ([]byte, error) {
-
-	if err := godotenv.Load(".env"); err != nil {
-		log.Fatalf("Error loading environment variables file: %v", err)
-	}
 
 	fireBaseAuthKey := os.Getenv("FIREBASE_AUTH_KEY")
 

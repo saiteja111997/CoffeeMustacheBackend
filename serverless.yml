@@ -1,11 +1,11 @@
-service: coffeeMustacheBackendDev
+service: coffeeMustacheBackend
 
 provider:
   name: aws
   runtime: provided.al2
-  region: us-east-1
+  region: ap-south-1
   stage: ${opt:stage}
-  environment: ${file(envDev.json)}
+  environment: ${file(env.json)}
   httpApi:
     cors: true
 
@@ -69,9 +69,9 @@ functions:
           path: /curatedCartCronJob
           method: GET
           cors: true
-      - schedule:
-          rate: cron(5 0 * * ? *)  # Runs every day at 12:05 AM UTC
-          enabled: true
+      # - schedule:
+      #     rate: cron(5 0 * * ? *)  # Runs every day at 12:05 AM UTC
+      #     enabled: true
 
   GetCrossSellData:
     handler: bootstrap
