@@ -1,9 +1,13 @@
 package helper
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	firebase "firebase.google.com/go/v4"
@@ -47,6 +51,60 @@ func SendPushNotification(deviceTokens []string, title, body string) error {
 			continue
 		}
 		log.Printf("Successfully sent message to token %s: %s", token, response)
+	}
+	return nil
+}
+
+type ExpoPushMessage struct {
+	To               string                 `json:"to"`
+	Vibrate          string                 `json:"vibrate"`
+	VibrationPattern []int                  `json:"vibrationPattern"`
+	Sound            string                 `json:"sound"`
+	Title            string                 `json:"title"`
+	Body             string                 `json:"body"`
+	Priority         string                 `json:"priority"`
+	Data             map[string]interface{} `json:"data"`
+	ChannelID        string                 `json:"channelId"`
+}
+
+func SendExpoPushNotification(deviceTokens []string, title, body, url string) error {
+	for _, token := range deviceTokens {
+		msg := ExpoPushMessage{
+			To:               token,
+			Vibrate:          "true",
+			VibrationPattern: []int{0, 250, 250, 250},
+			Sound:            "notification_sound.wav",
+			Title:            title,
+			Body:             body,
+			Priority:         "high",
+			Data: map[string]interface{}{
+				"url":   "https://admin.coffeemustache.in/alerts/waiter-view?tab=new-orders",
+				"extra": "data",
+			},
+			ChannelID: "custom_channel",
+		}
+
+		payload, err := json.Marshal(msg)
+		if err != nil {
+			return err
+		}
+
+		req, err := http.NewRequest("POST", "https://exp.host/--/api/v2/push/send", bytes.NewBuffer(payload))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("failed to send push notification, status: %s", resp.Status)
+		}
 	}
 	return nil
 }
