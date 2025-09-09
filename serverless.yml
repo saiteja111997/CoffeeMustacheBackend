@@ -2,6 +2,7 @@ service: coffeeMustacheBackend
 
 provider:
   name: aws
+  versionFunctions: false
   runtime: provided.al2
   region: ap-south-1
   stage: ${opt:stage}
