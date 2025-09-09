@@ -68,6 +68,9 @@ type ExpoPushMessage struct {
 }
 
 func SendExpoPushNotification(deviceTokens []string, title, body, url string) error {
+
+	fmt.Println("Sending Expo Push Notification to tokens:", deviceTokens)
+
 	for _, token := range deviceTokens {
 		msg := ExpoPushMessage{
 			To:               token,
