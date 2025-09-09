@@ -63,6 +63,7 @@ type ExpoPushMessage struct {
 	Sound            string                 `json:"sound"`
 	Title            string                 `json:"title"`
 	Body             string                 `json:"body"`
+	Priority         string                 `json:"priority"`
 	Data             map[string]interface{} `json:"data"`
 	ChannelID        string                 `json:"channelId"`
 }
@@ -76,6 +77,7 @@ func SendExpoPushNotification(deviceTokens []string, title, body, url string) er
 			Sound:            "notification_sound.wav",
 			Title:            title,
 			Body:             body,
+			Priority:         "high",
 			Data: map[string]interface{}{
 				"url":   "https://admin.coffeemustache.in/alerts/waiter-view?tab=new-orders",
 				"extra": "data",
