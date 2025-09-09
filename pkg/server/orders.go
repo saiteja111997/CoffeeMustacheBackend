@@ -227,15 +227,34 @@ func (s *Server) PlaceOrder(c *fiber.Ctx) error {
 		})
 	}
 
-	// Send a push notification by fetching device tokens from fcm_tokens table based on cafe id
+	// Send a push notification by fetching the latest device token for every user in that cafe
 	var deviceTokens []string
-	if err := s.Db.Model(&structures.FcmToken{}).
-		Where("cafe_id = ?", req.CafeID).
-		Pluck("token", &deviceTokens).Error; err != nil {
+	type TokenResult struct {
+		Token     string
+		CreatedAt time.Time
+		UserID    uint
+	}
+
+	var tokenResults []TokenResult
+	if err := s.Db.Raw(`
+		SELECT t1.token, t1.created_at, t1.user_id
+		FROM fcm_tokens t1
+		INNER JOIN (
+			SELECT user_id, MAX(created_at) AS max_created_at
+			FROM fcm_tokens
+			WHERE cafe_id = ?
+			GROUP BY user_id
+		) t2 ON t1.user_id = t2.user_id AND t1.created_at = t2.max_created_at
+		WHERE t1.cafe_id = ?
+	`, req.CafeID, req.CafeID).Scan(&tokenResults).Error; err != nil {
 		fmt.Println("Failed to fetch device tokens:", err)
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to fetch device tokens",
 		})
+	}
+
+	for _, tr := range tokenResults {
+		deviceTokens = append(deviceTokens, tr.Token)
 	}
 
 	body := fmt.Sprintf("New order received for Table No: %s", session.TableName)
